@@ -87,10 +87,31 @@ func GetAllMessagesInDB() ([]*Message, error) {
 	return messages, nil
 }
 
-func UpdateMessage(senderId, recieverId uuid.UUID, newContent string) (bool, error) {
+func UpdateMessageWithId(senderId, recieverId uuid.UUID, newContent string) (bool, error) {
+	row := db.Connection.QueryRow("UPDATE messages SET content = $1 WHERE sender_id = $2 AND reciever_id = $3 RETURNING sender_id, receiver_id;", newContent, senderId, recieverId)
+	var sender_id, reciever_id uuid.UUID
+	if err := row.Scan(&sender_id, &reciever_id); err != nil {
+		fmt.Println("Error scanning row in UpdateMessageWithId(). Error: ", err)
+		return false, err
+	}
 
+	if sender_id == senderId && reciever_id == recieverId {
+		return true, nil
+	}
+
+	return false, errors.New("something wrong happened in UpdateMessageWithId()")
 }
 
-func DeleteMessage(senderId, receiverId uuid.UUID) (bool, error) {
+func DeleteMessage(senderId, receiverId uuid.UUID, content string) (bool, error) {
+	result, err := db.Connection.Exec("DELETE FROM messages WHERE sender_id = $1 AND receiver_id = $2 AND content = $3;", senderId, receiverId, content)
+	if err != nil {
+		fmt.Println("Error occured in DeleteMessage(). Error: ", err)
+		return false, err
+	}
 
+	if rowsEffected, _ := result.RowsAffected(); rowsEffected == 0 {
+		return false, errors.New("rows effected after delete query = 0")
+	}
+
+	return true, nil
 }
