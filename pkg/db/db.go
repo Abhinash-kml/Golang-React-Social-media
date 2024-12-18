@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var connection *sql.DB
+var Connection *sql.DB
 
 func Connect() {
 	err := godotenv.Load()
@@ -28,18 +28,18 @@ func Connect() {
 		log.Fatal("Returned db is still invalid")
 	}
 
-	connection = db
+	Connection = db
 
 	CreateTables()
 }
 
 func Disconnect() {
-	if connection == nil {
+	if Connection == nil {
 		log.Fatal("Trying to close a databse connection which is already closed or invalid")
 	}
 
-	connection.Close()
-	connection = nil
+	Connection.Close()
+	Connection = nil
 }
 
 func CreateTables() {

@@ -45,7 +45,7 @@ func GetUserWithID(DB *sql.DB, id uuid.UUID) (*User, error) {
 	return user, nil
 }
 
-func GetUsersWithID(DB *sql.DB, ids []uuid.UUID, limit int) ([]*User, error) {
+func GetUsersWithIDs(DB *sql.DB, ids []uuid.UUID, limit int) ([]*User, error) {
 	if DB == nil {
 		return nil, errors.New("tried calling GetUsersWithId() with invalid pointer to Database")
 	}
