@@ -7,6 +7,7 @@ import (
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type Message struct {
@@ -23,11 +24,14 @@ func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
 	}
 }
 
-func InsertMessageInDb(message *Message) (bool, error) {
+func InsertMessageInDb(logger *zap.Logger, message *Message) (bool, error) {
 	var sender_id, reciever_id uuid.UUID
 	row := db.Connection.QueryRow("INSERT INTO messages(sender_id, reciever_id, content) VALUES($1, $2, $3) RETURNING sender_id, reciever_id;")
 	if err := row.Scan(&sender_id, &reciever_id); err != nil {
-		fmt.Println("Error scanning row in InsertMessageInDb(). Error: ", err)
+		logger.Error("Error scanning row",
+			zap.String("function", "InsertMessageInDb"),
+			zap.String("Error", err.Error()))
+
 		return false, err
 	}
 
@@ -38,10 +42,12 @@ func InsertMessageInDb(message *Message) (bool, error) {
 	return false, errors.New("something wrong happened in InsertMessageInDb()")
 }
 
-func GetAllMessagesOfSenderAndReciever(sender_id, receiver_id uuid.UUID) []*Message {
+func GetAllMessagesOfSenderAndReciever(logger *zap.Logger, sender_id, receiver_id uuid.UUID) []*Message {
 	rows, err := db.Connection.Query("SELECT sender_id, reciever_id, content FROM messages WHERE sender_id = $1 AND reciever_id = $2;", sender_id, receiver_id)
 	if err != nil {
-		fmt.Println("Error querying rows in GetAllMessagesOfSenderAndReciever().")
+		logger.Error("Error scanning rows",
+			zap.String("function", "GetAllMessagesOfSenderAndReciever"),
+			zap.String("Error", err.Error()))
 		return nil
 	}
 
@@ -52,7 +58,9 @@ func GetAllMessagesOfSenderAndReciever(sender_id, receiver_id uuid.UUID) []*Mess
 
 	for rows.Next() {
 		if err := rows.Scan(message.SenderID, message.RecieverID, message.Content); err != nil {
-			fmt.Println("Error scanning rows in GetAllMessagesOfSenderAndReciever().")
+			logger.Error("Error scanning row",
+				zap.String("function", "GetAllMessagesOfSenderAndReciever"),
+				zap.String("Error", err.Error()))
 			return nil
 		}
 
@@ -87,30 +95,37 @@ func GetAllMessagesInDB() ([]*Message, error) {
 	return messages, nil
 }
 
-func UpdateMessageWithId(senderId, recieverId uuid.UUID, newContent string) (bool, error) {
+func UpdateMessageWithId(logger *zap.Logger, senderId, recieverId uuid.UUID, newContent string) (bool, error) {
 	row := db.Connection.QueryRow("UPDATE messages SET content = $1 WHERE sender_id = $2 AND reciever_id = $3 RETURNING sender_id, receiver_id;", newContent, senderId, recieverId)
 	var sender_id, reciever_id uuid.UUID
 	if err := row.Scan(&sender_id, &reciever_id); err != nil {
-		fmt.Println("Error scanning row in UpdateMessageWithId(). Error: ", err)
+		logger.Error("Error scanning row",
+			zap.String("function", "UpdateMessageWithId"),
+			zap.String("Error", err.Error()))
+
 		return false, err
 	}
 
-	if sender_id == senderId && reciever_id == recieverId {
-		return true, nil
+	if sender_id != senderId || reciever_id != recieverId {
+		return false, errors.New("something wrong happened in UpdateMessageWithId()")
 	}
 
-	return false, errors.New("something wrong happened in UpdateMessageWithId()")
+	return true, nil
 }
 
-func DeleteMessage(senderId, receiverId uuid.UUID, content string) (bool, error) {
-	result, err := db.Connection.Exec("DELETE FROM messages WHERE sender_id = $1 AND receiver_id = $2 AND content = $3;", senderId, receiverId, content)
-	if err != nil {
-		fmt.Println("Error occured in DeleteMessage(). Error: ", err)
+func DeleteMessage(logger *zap.Logger, senderId, receiverId uuid.UUID, content string) (bool, error) {
+	row := db.Connection.QueryRow("DELETE FROM messages WHERE sender_id = $1 AND receiver_id = $2 AND content = $3 RETURNING sender_id, receiver_id;", senderId, receiverId, content)
+	var sender_id, receiver_id uuid.UUID
+	if err := row.Scan(&sender_id, &receiver_id); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("function", ""),
+			zap.String("Error", err.Error()))
+
 		return false, err
 	}
 
-	if rowsEffected, _ := result.RowsAffected(); rowsEffected == 0 {
-		return false, errors.New("rows effected after delete query = 0")
+	if sender_id != senderId || receiver_id != receiverId {
+		return false, errors.New("something wrong happended in DeleteMessage()")
 	}
 
 	return true, nil

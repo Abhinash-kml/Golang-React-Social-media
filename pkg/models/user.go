@@ -1,11 +1,11 @@
 package models
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 
+	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type User struct {
@@ -34,29 +34,23 @@ func NewUser(name, email, password, dob, created_at, modified_at, last_login str
 	}
 }
 
-func GetUserWithID(DB *sql.DB, id uuid.UUID) (*User, error) {
-	if DB == nil {
-		return nil, errors.New("tried calling GetUserWithID() with invalid pointer to Database")
-	}
-
+func GetUserWithID(logger *zap.Logger, id uuid.UUID) (*User, error) {
 	user := &User{}
 
-	if err := DB.QueryRow("SELECT * FROM users WHERE id = $1;", id).Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
-		return nil, err
+	row := db.Connection.QueryRow("SELECT * FROM users WHERE id = $1;", id)
+	if err := row.Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("function", "GetUserWithId"))
 	}
 
 	return user, nil
 }
 
-func GetUsersWithIDs(DB *sql.DB, ids []uuid.UUID, limit int) ([]*User, error) {
-	if DB == nil {
-		return nil, errors.New("tried calling GetUsersWithId() with invalid pointer to Database")
-	}
-
+func GetUsersWithIDs(logger *zap.Logger, ids []uuid.UUID, limit int) ([]*User, error) {
 	var users []*User
 
 	for _, val := range ids {
-		user, err := GetUserWithID(DB, val)
+		user, err := GetUserWithID(logger, val)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -68,16 +62,15 @@ func GetUsersWithIDs(DB *sql.DB, ids []uuid.UUID, limit int) ([]*User, error) {
 	return users, nil
 }
 
-func GetUserWith(DB *sql.DB, with string, condition string, value string) (*User, error) {
-	if DB == nil {
-		return nil, errors.New("tried calling GetUserWith() with invalid pointer to Database")
-	}
-
+func GetUserWith(logger *zap.Logger, with string, condition string, value string) (*User, error) {
 	query := fmt.Sprintf("SELECT * FROM users WHERE %s %s %s", with, condition, value)
 
 	user := &User{}
 
-	if err := DB.QueryRow(query).Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
+	row := db.Connection.QueryRow(query)
+	if err := row.Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("funcion", "GetUserWith"))
 		return nil, err
 	}
 

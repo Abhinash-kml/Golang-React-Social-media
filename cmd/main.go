@@ -7,10 +7,11 @@ import (
 	"syscall"
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
+	"go.uber.org/zap"
 )
 
 func main() {
-	fmt.Println("Hello World")
+	fmt.Println("Staring backend server...")
 
 	db.Connect()
 
@@ -18,7 +19,20 @@ func main() {
 	signal.Notify(sigs, os.Interrupt, os.Kill)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	<-sigs
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugar := logger.Sugar()
 
-	// Shutdown()
+	sugar.Infow("Test logging",
+		"url", "googli.com",
+		"num", 3,
+		"tries", 42.0)
+
+	logger.Error("Trying out logger",
+		zap.String("message", "meow"))
+
+	recievedSignal := <-sigs
+
+	fmt.Println("Recieved signal:", recievedSignal, "\nShutting down server...")
+	db.Disconnect()
 }

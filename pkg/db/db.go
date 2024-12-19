@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -26,6 +27,8 @@ func Connect() {
 
 	if db == nil {
 		log.Fatal("Returned db is still invalid")
+	} else {
+		fmt.Println("Connected to postgres db")
 	}
 
 	Connection = db
