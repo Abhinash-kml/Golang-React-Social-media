@@ -10,8 +10,8 @@ import (
 )
 
 type Message struct {
-	SenderID   uuid.UUID `json:"sender_id"`
-	RecieverID uuid.UUID `json:"reciever_id"`
+	SenderID   uuid.UUID `json:"senderid"`
+	RecieverID uuid.UUID `json:"recieverid"`
 	Content    string    `json:"content"`
 }
 

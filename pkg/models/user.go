@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	Id          uuid.UUID `json:"Id"`
+	Id          uuid.UUID `json:"id"`
 	Fullname    string    `json:"name"`
 	Email       string    `json:"email"`
 	Password    string    `json:"password"`
@@ -17,6 +17,9 @@ type User struct {
 	Created_at  string    `json:"created_at"`
 	Modified_at string    `json:"modified_at"`
 	Lastlogin   string    `json:"lastlogin"`
+	Country     string    `json:"country"`
+	State       string    `json:"state"`
+	City        string    `json:"city"`
 }
 
 func NewUser(name, email, password, dob, created_at, modified_at, last_login string) *User {
