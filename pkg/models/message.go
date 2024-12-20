@@ -43,7 +43,7 @@ func InsertMessageInDb(logger *zap.Logger, message *Message) (bool, error) {
 }
 
 func GetAllMessagesOfSenderAndReciever(logger *zap.Logger, sender_id, receiver_id uuid.UUID) []*Message {
-	rows, err := db.Connection.Query("SELECT sender_id, reciever_id, content FROM messages WHERE sender_id = $1 AND reciever_id = $2;", sender_id, receiver_id)
+	rows, err := db.Connection.Query("SELECT sender_id, reciever_id, content FROM messages WHERE sender_id IN($1, $2) AND reciever_id IN($1, $2);", sender_id, receiver_id)
 	if err != nil {
 		logger.Error("Error scanning rows",
 			zap.String("function", "GetAllMessagesOfSenderAndReciever"),
