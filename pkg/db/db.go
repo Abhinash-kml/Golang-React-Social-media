@@ -46,5 +46,16 @@ func Disconnect() {
 }
 
 func CreateTables() {
+	_, err := Connection.Exec(`CREATE TABLE IF NOT EXISTS users(
+					id SERIAL,
+					userid uuid UNIQUE NOT NULL,
+					name VARCHAR,
+					email VARCHAR,
+					password VARCHAR,
+					country VARCHAR,
+					state VARCHAR)`)
 
+	if err != nil {
+		fmt.Println(err)
+	}
 }
