@@ -145,3 +145,26 @@ func InsertUser(logger *zap.Logger, fullname, email, password, dob, country, sta
 
 	return true, nil
 }
+
+func GetPasswordOfUserWithEmail(logger *zap.Logger, email string) (string, error) {
+	row := db.Connection.QueryRow("SELECT password FROM users WHERE email = $1;", email)
+	var returnedEmail string
+	if err := row.Scan(&returnedEmail); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("Function", "GetPasswordOfUserWithEmail"),
+			zap.String("Error", err.Error()))
+
+		return "", nil
+	}
+
+	return returnedEmail, nil
+}
+
+func InsertNewUserIntoDatabase(logger *zap.Logger, email, password string) error {
+	ok, err := InsertUser(logger, "", email, password, "", "India", "Random", "Random")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
