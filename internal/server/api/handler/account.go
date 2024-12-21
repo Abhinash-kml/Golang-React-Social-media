@@ -4,18 +4,18 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
+	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/utils"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HandleLogin(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
+func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
-	passwordFromDb, err := models.GetPasswordOfUserWithEmail(logger, email)
+	passwordFromDb, err := repo.GetPasswordOfUserWithEmail(logger, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -57,7 +57,7 @@ func HandleLogin(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther) // Redirect
 }
 
-func HandleSignup(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
+func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -67,7 +67,7 @@ func HandleSignup(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.InsertNewUserIntoDatabase(logger, email, string(hashedPassword))
+	err = repo.InsertNewUserIntoDatabase(logger, email, string(hashedPassword))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
