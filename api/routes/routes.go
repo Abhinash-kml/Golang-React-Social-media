@@ -7,6 +7,7 @@ import (
 )
 
 func RegisterAndStartApiServer() {
+
 	router := mux.NewRouter()
 	usersRouter := router.PathPrefix("/api/users").Subrouter()
 	postRouter := router.PathPrefix("/api/posts").Subrouter()

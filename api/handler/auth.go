@@ -7,20 +7,38 @@ import (
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/utils"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterAuthRoutes(router *mux.Router) {
-	router.HandleFunc("/login", LoginHandler).Methods("POST")
-	router.HandleFunc("/signup", SignupHandler).Methods("POST")
+type Server struct {
+	Logger     *zap.Logger
+	Connection *sql.DB
+	Router     *mux.Router
 }
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+func NewServer() *Server {
+	logger, _ := zap.NewProduction()
+
+	return &Server{
+		Logger:     logger,
+		Connection: nil,
+		Router:     mux.NewRouter(),
+	}
+}
+
+func (s *Server) Start() {
+	accountRouter := s.Router.PathPrefix("/api").Subrouter()
+	accountRouter.HandleFunc("/login", s.HandleLogin).Methods("POST")
+	accountRouter.HandleFunc("/signup", s.HandleSignup).Methods("POST")
+}
+
+func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
-	passwordFromDb, err := models.GetPasswordOfUserWithEmail(email)
+	passwordFromDb, err := models.GetPasswordOfUserWithEmail(s.Logger, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -62,7 +80,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther) // Redirect
 }
 
-func SignupHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -72,7 +90,7 @@ func SignupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = InsertNewUserIntoDatabase(email, string(hashedPassword))
+	err = models.InsertNewUserIntoDatabase(s.Logger, email, string(hashedPassword))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}

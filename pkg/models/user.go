@@ -161,7 +161,7 @@ func GetPasswordOfUserWithEmail(logger *zap.Logger, email string) (string, error
 }
 
 func InsertNewUserIntoDatabase(logger *zap.Logger, email, password string) error {
-	ok, err := InsertUser(logger, "", email, password, "", "India", "Random", "Random")
+	_, err := InsertUser(logger, "", email, password, "", "India", "Random", "Random")
 	if err != nil {
 		return err
 	}
