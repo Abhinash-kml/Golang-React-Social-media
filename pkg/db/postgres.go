@@ -58,11 +58,18 @@ func (d *Postgres) CreateTables() {
 	_, err := d.conn.Exec(`CREATE TABLE IF NOT EXISTS users(
 		id SERIAL,
 		userid uuid UNIQUE NOT NULL,
-		name VARCHAR,
+		name VARCHAR UNIQUE NOT NULL,
 		email VARCHAR,
 		password VARCHAR,
+		dob	VARCHAR,
 		country VARCHAR,
-		state VARCHAR)`)
+		state VARCHAR,
+		city VARCHAR,
+		created_at VARCHAR,
+		modified_at VARCHAR,
+		last_login VARCHAR)`)
+
+	// userid, name, email, password, dob, country, state, city, created_at, modified_at, last_login
 
 	if err != nil {
 		fmt.Println(err)
@@ -159,8 +166,11 @@ func (d *Postgres) InsertUser(logger *zap.Logger, fullname, email, password, dob
 	modifiedAt := time.Now().String()
 	lastLogin := time.Now().String()
 
-	row := d.conn.QueryRow(`INSERT INTO users(uuid, fullname, email, password, dob, country, state, city, created_at, modified_at, last_login)
-								VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING user_id`,
+	row := d.conn.QueryRow(`INSERT INTO users(userid, name, email, password, dob, country, state, city, created_at, modified_at, last_login)
+								VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+								ON CONFLICT(name)
+								DO NOTHING
+								RETURNING userid`,
 		uuId, fullname, email, password, dob, country, state, city, createdAt, modifiedAt, lastLogin)
 
 	var returnedId uuid.UUID
@@ -193,8 +203,8 @@ func (d *Postgres) GetPasswordOfUserWithEmail(logger *zap.Logger, email string) 
 	return returnedEmail, nil
 }
 
-func (d *Postgres) InsertNewUserIntoDatabase(logger *zap.Logger, email, password string) error {
-	_, err := d.InsertUser(logger, "", email, password, "", "India", "Random", "Random")
+func (d *Postgres) InsertNewUserIntoDatabase(logger *zap.Logger, name, email, password string) error {
+	_, err := d.InsertUser(logger, name, email, password, "", "India", "Random", "Random")
 	if err != nil {
 		return err
 	}

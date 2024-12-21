@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
@@ -14,11 +15,11 @@ func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
 	passwordFromDb, err := repo.GetPasswordOfUserWithEmail(logger, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Println("No sql row.")
 			return
 		}
 
@@ -28,7 +29,7 @@ func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r
 	}
 
 	// Compare the stored password in db with the hashed password currently created from request
-	if err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(passwordFromDb)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(passwordFromDb), []byte(password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -58,8 +59,13 @@ func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r
 }
 
 func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
+
+	logger.Info("Recieved data",
+		zap.String("email", email),
+		zap.String("password", password))
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {
@@ -67,8 +73,10 @@ func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, 
 		return
 	}
 
-	err = repo.InsertNewUserIntoDatabase(logger, email, string(hashedPassword))
+	err = repo.InsertNewUserIntoDatabase(logger, name, email, string(hashedPassword))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	w.WriteHeader(http.StatusOK)
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/internal/server/api/handler"
@@ -28,6 +29,7 @@ func NewServer() *Server {
 func (s *Server) Start() {
 	s.InitializeDatabaseConnection()
 	s.SetupRoutes()
+	s.ServeAPI()
 }
 
 func (s *Server) Stop() {
@@ -44,4 +46,15 @@ func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	handler.HandleSignup(s.logger, s.repo, w, r)
+}
+
+func (s *Server) ServeAPI() {
+	go func() {
+		if err := http.ListenAndServe(":8000", s.router); err != nil {
+			fmt.Println("Failed to start API server. Shutting down...")
+			s.Stop()
+		}
+	}()
+
+	fmt.Println("Listening on localhost:8000.")
 }
