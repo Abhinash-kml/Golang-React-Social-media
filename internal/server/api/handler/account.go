@@ -6,39 +6,16 @@ import (
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/utils"
-	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Server struct {
-	Logger     *zap.Logger
-	Connection *sql.DB
-	Router     *mux.Router
-}
-
-func NewServer() *Server {
-	logger, _ := zap.NewProduction()
-
-	return &Server{
-		Logger:     logger,
-		Connection: nil,
-		Router:     mux.NewRouter(),
-	}
-}
-
-func (s *Server) Start() {
-	accountRouter := s.Router.PathPrefix("/api").Subrouter()
-	accountRouter.HandleFunc("/login", s.HandleLogin).Methods("POST")
-	accountRouter.HandleFunc("/signup", s.HandleSignup).Methods("POST")
-}
-
-func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
+func HandleLogin(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
-	passwordFromDb, err := models.GetPasswordOfUserWithEmail(s.Logger, email)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
+	passwordFromDb, err := models.GetPasswordOfUserWithEmail(logger, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -80,7 +57,7 @@ func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther) // Redirect
 }
 
-func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
+func HandleSignup(logger *zap.Logger, w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -90,7 +67,7 @@ func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.InsertNewUserIntoDatabase(s.Logger, email, string(hashedPassword))
+	err = models.InsertNewUserIntoDatabase(logger, email, string(hashedPassword))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
