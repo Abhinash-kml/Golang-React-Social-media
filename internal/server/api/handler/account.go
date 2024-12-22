@@ -44,7 +44,6 @@ func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r
 	}
 
 	// Create cookie
-	//loggedInUser = email
 	cookie := &http.Cookie{
 		Name:     "token",
 		Value:    token,
@@ -64,6 +63,7 @@ func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, 
 	password := r.FormValue("password")
 
 	logger.Info("Recieved data",
+		zap.String("name", name),
 		zap.String("email", email),
 		zap.String("password", password))
 
