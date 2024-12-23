@@ -12,6 +12,7 @@ func PerformCookieBasedJWTAuth(next http.Handler) http.Handler {
 		cookie, err := r.Cookie("token")
 		if err != nil {
 			if err == http.ErrNoCookie {
+				fmt.Println("Cookie JWT failed. No cookie found.")
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
@@ -27,5 +28,7 @@ func PerformCookieBasedJWTAuth(next http.Handler) http.Handler {
 
 		// Print information about the verified token
 		fmt.Printf("Token verfied successfully. Claims: %+v\\n", verifiedToken.Claims)
+
+		next.ServeHTTP(w, r)
 	})
 }

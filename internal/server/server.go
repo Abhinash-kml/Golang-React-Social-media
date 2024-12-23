@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -60,6 +61,13 @@ func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
 	handler.HandleSignup(s.logger, s.repo, w, r)
+}
+
+func (s *Server) PrivateHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Passed cookie jwt auth")
+
+	json.NewEncoder(w).Encode("Auth: Passed")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) ServeAPI() {
