@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -27,7 +28,7 @@ func NewServer() *Server {
 		repo:   &db.Postgres{},
 		router: muxRouter,
 		httpserver: &http.Server{
-			Addr:         "127.0.0.1:8000",
+			Addr:         ":8000",
 			ReadTimeout:  time.Second * 15,
 			WriteTimeout: time.Second * 15,
 			IdleTimeout:  time.Second * 60,
@@ -43,9 +44,9 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Stop() {
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	//defer cancel()
-	//s.httpserver.Shutdown(ctx)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+	s.httpserver.Shutdown(ctx)
 	s.repo.Disconnect()
 }
 
@@ -63,7 +64,7 @@ func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) ServeAPI() {
 	go func() {
-		if err := http.ListenAndServe(":8000", s.router); err != nil {
+		if err := s.httpserver.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Println("Failed to start API server. Error:", err)
 			s.Stop()
 		}
