@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Staring backend server...")
+	fmt.Println("Starting backend server...")
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, os.Kill)
