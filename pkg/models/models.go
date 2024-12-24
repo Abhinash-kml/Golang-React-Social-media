@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -56,6 +58,7 @@ type Message struct {
 	RecieverID uuid.UUID `json:"recieverid"`
 	Body       string    `json:"body"`
 	Status     int       `json:"status"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
@@ -63,5 +66,6 @@ func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
 		SenderID:   senderid,
 		RecieverID: receiverid,
 		Body:       content,
+		Timestamp:  time.Now(),
 	}
 }
