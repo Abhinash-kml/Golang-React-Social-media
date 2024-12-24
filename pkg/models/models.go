@@ -6,66 +6,62 @@ import (
 
 type User struct {
 	Id          uuid.UUID `json:"uuid"`
-	Fullname    string    `json:"name"`
+	Name        string    `json:"name"`
 	Email       string    `json:"email"`
 	Password    string    `json:"password"`
 	Dob         string    `json:"dob"`
 	Created_at  string    `json:"created_at"`
 	Modified_at string    `json:"modified_at"`
-	Lastlogin   string    `json:"lastlogin"`
+	Lastlogin   string    `json:"last_login"`
 	Country     string    `json:"country"`
 	State       string    `json:"state"`
 	City        string    `json:"city"`
+	BanLevel    byte      `json:"ban_level"`
 }
 
-func NewUser(name, email, password, dob, created_at, modified_at, last_login string) *User {
+func NewUser(name, email, password, dob string, ban_level byte) *User {
 	return &User{
-		Fullname:    name,
-		Email:       email,
-		Password:    password,
-		Dob:         dob,
-		Created_at:  created_at,
-		Modified_at: modified_at,
-		Lastlogin:   last_login,
+		Name:     name,
+		Email:    email,
+		Password: password,
+		Dob:      dob,
+		BanLevel: ban_level,
 	}
 }
 
 type Post struct {
-	UserID  uuid.UUID `json:"userid"`
-	Content string    `json:"content"`
-	Hashtag string    `json:"hashtag"`
+	UserId     uuid.UUID `json:"userid"`
+	Title      string    `json:"title"`
+	Created_at string    `json:"created_at"`
+	Body       string    `json:"body"`
+	Likes      int       `json:"likes"`
+	Comments   int       `json:"comments"`
+	MediaUrl   string    `json:"media_url"`
+	Hashtag    string    `json:"hashtag"`
 }
 
-func NewPost(uuid uuid.UUID, content, hashtag string) *Post {
+func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments int) *Post {
 	return &Post{
-		UserID:  uuid,
-		Content: content,
-		Hashtag: hashtag,
+		UserId:   uuid,
+		Body:     content,
+		Hashtag:  hashtag,
+		Likes:    likes,
+		Comments: comments,
+		MediaUrl: media_url,
 	}
 }
 
 type Message struct {
 	SenderID   uuid.UUID `json:"senderid"`
 	RecieverID uuid.UUID `json:"recieverid"`
-	Content    string    `json:"content"`
+	Body       string    `json:"body"`
+	Status     int       `json:"status"`
 }
 
 func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
 	return &Message{
 		SenderID:   senderid,
 		RecieverID: receiverid,
-		Content:    content,
-	}
-}
-
-type Media struct {
-	PostID uuid.UUID `json:"postid"`
-	Url    string    `json:"url"`
-}
-
-func NewMedia(postid uuid.UUID, url string) *Media {
-	return &Media{
-		PostID: postid,
-		Url:    url,
+		Body:       content,
 	}
 }

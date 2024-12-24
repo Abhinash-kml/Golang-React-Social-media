@@ -80,7 +80,7 @@ func (d *Postgres) GetUserWithID(logger *zap.Logger, id string) (*model.User, er
 	user := &model.User{}
 
 	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE userid = $1;", id)
-	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("function", "GetUserWithId"),
 			zap.String("Error", err.Error()))
@@ -95,7 +95,7 @@ func (d *Postgres) GetUserWithName(logger *zap.Logger, name string) (*model.User
 	user := &model.User{}
 
 	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE name = $1;", name)
-	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("function", "GetUserWithName"),
 			zap.String("Error", err.Error()))
@@ -110,7 +110,7 @@ func (d *Postgres) GetUserWithEmail(logger *zap.Logger, email string) (*model.Us
 	user := &model.User{}
 
 	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE email = $1;", email)
-	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("function", "GetUserWithEmail"),
 			zap.String("Error", err.Error()))
@@ -143,7 +143,7 @@ func (d *Postgres) GetUserWith(logger *zap.Logger, with string, condition string
 	user := &model.User{}
 
 	row := d.conn.QueryRow(query)
-	if err := row.Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
+	if err := row.Scan(user.Id, user.Name, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("Funcion", "GetUserWith"),
 			zap.String("Error", err.Error()))
@@ -296,20 +296,6 @@ func (d *Postgres) DeleteMediaWithId(logger *zap.Logger, postId uuid.UUID) (bool
 	return true, nil
 }
 
-func (d *Postgres) GetMediaWithId(logger *zap.Logger, postId uuid.UUID) *model.Media {
-	row := d.conn.QueryRow("SELECT * FROM media WHERE postid = $1;", postId)
-	media := &model.Media{}
-	if err := row.Scan(media.PostID, media.Url); err != nil {
-		logger.Error("Error scanning row",
-			zap.String("function", "GetMediaWithId"),
-			zap.String("Error", err.Error()))
-
-		return nil
-	}
-
-	return media
-}
-
 func (d *Postgres) InsertMessageInDb(logger *zap.Logger, message *model.Message) (bool, error) {
 	var sender_id, reciever_id uuid.UUID
 	row := d.conn.QueryRow("INSERT INTO messages(sender_id, reciever_id, content) VALUES($1, $2, $3) RETURNING sender_id, reciever_id;")
@@ -343,7 +329,7 @@ func (d *Postgres) GetAllMessagesOfSenderAndReciever(logger *zap.Logger, sender_
 	)
 
 	for rows.Next() {
-		if err := rows.Scan(message.SenderID, message.RecieverID, message.Content); err != nil {
+		if err := rows.Scan(message.SenderID, message.RecieverID, message.Body); err != nil {
 			logger.Error("Error scanning row",
 				zap.String("function", "GetAllMessagesOfSenderAndReciever"),
 				zap.String("Error", err.Error()))
@@ -370,7 +356,7 @@ func (d *Postgres) GetAllMessagesInDB() ([]*model.Message, error) {
 	)
 
 	for rows.Next() {
-		if err := rows.Scan(message.SenderID, message.RecieverID, message.Content); err != nil {
+		if err := rows.Scan(message.SenderID, message.RecieverID, message.Body); err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
@@ -474,7 +460,7 @@ func (d *Postgres) DeletePostWithId(logger *zap.Logger, uuId uuid.UUID) (bool, e
 func (d *Postgres) GetPostWithId(logger *zap.Logger, uuId uuid.UUID) *model.Post {
 	row := d.conn.QueryRow("SELECT * FROM posts WHERE userid = $1;", uuId)
 	post := &model.Post{}
-	if err := row.Scan(post.UserID, post.Content, post.Hashtag); err != nil {
+	if err := row.Scan(post.UserId, post.Body, post.Hashtag); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("function", "GetPostWithId"),
 			zap.String("Error", err.Error()))
