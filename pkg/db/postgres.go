@@ -76,11 +76,11 @@ func (d *Postgres) CreateTables() {
 	}
 }
 
-func (d *Postgres) GetUserWithID(logger *zap.Logger, id uuid.UUID) (*model.User, error) {
+func (d *Postgres) GetUserWithID(logger *zap.Logger, id string) (*model.User, error) {
 	user := &model.User{}
 
-	row := d.conn.QueryRow("SELECT * FROM users WHERE id = $1;", id)
-	if err := row.Scan(user.Id, user.Fullname, user.Email, user.Password, user.Dob, user.Created_at, user.Modified_at, user.Lastlogin); err != nil {
+	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE userid = $1;", id)
+	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
 		logger.Error("Error scanning row",
 			zap.String("function", "GetUserWithId"),
 			zap.String("Error", err.Error()))
@@ -91,7 +91,37 @@ func (d *Postgres) GetUserWithID(logger *zap.Logger, id uuid.UUID) (*model.User,
 	return user, nil
 }
 
-func (d *Postgres) GetUsersWithIDs(logger *zap.Logger, ids []uuid.UUID, limit int) ([]*model.User, error) {
+func (d *Postgres) GetUserWithName(logger *zap.Logger, name string) (*model.User, error) {
+	user := &model.User{}
+
+	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE name = $1;", name)
+	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("function", "GetUserWithName"),
+			zap.String("Error", err.Error()))
+
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (d *Postgres) GetUserWithEmail(logger *zap.Logger, email string) (*model.User, error) {
+	user := &model.User{}
+
+	row := d.conn.QueryRow("SELECT userid, name, email, created_at, modified_at, last_login, country, state FROM users WHERE email = $1;", email)
+	if err := row.Scan(&user.Id, &user.Fullname, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State); err != nil {
+		logger.Error("Error scanning row",
+			zap.String("function", "GetUserWithEmail"),
+			zap.String("Error", err.Error()))
+
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (d *Postgres) GetUsersWithIDs(logger *zap.Logger, ids []string, limit int) ([]*model.User, error) {
 	var users []*model.User
 
 	for _, val := range ids {

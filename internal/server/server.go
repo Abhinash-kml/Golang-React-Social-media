@@ -86,7 +86,54 @@ func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	attributeType := queryParams.Get("attribute_type")
+	attribute := queryParams.Get("attribute")
 
+	switch attributeType {
+	case "userid":
+		{
+			fmt.Println("attribute is userid")
+			user, err := s.repo.GetUserWithID(s.logger, attribute)
+			if err != nil {
+				s.logger.Error("Error getting user with userid from database",
+					zap.String("Error", err.Error()))
+
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+
+			json.NewEncoder(w).Encode(user)
+			w.WriteHeader(http.StatusOK)
+		}
+	case "name":
+		{
+			fmt.Println("attribute is name")
+			user, err := s.repo.GetUserWithName(s.logger, attribute)
+			if err != nil {
+				s.logger.Error("Error getting user with name from database",
+					zap.String("Error", err.Error()))
+
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+
+			json.NewEncoder(w).Encode(user)
+			w.WriteHeader(http.StatusOK)
+		}
+	case "email":
+		fmt.Println("attribute is email")
+		user, err := s.repo.GetUserWithEmail(s.logger, attribute)
+		if err != nil {
+			s.logger.Error("Error getting user with email from database",
+				zap.String("Error", err.Error()))
+
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		json.NewEncoder(w).Encode(user)
+		w.WriteHeader(http.StatusOK)
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
 func (s *Server) GetPostsOfUserid(w http.ResponseWriter, r *http.Request) {
