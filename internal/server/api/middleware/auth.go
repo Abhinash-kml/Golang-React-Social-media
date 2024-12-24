@@ -7,7 +7,7 @@ import (
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/utils"
 )
 
-func PerformCookieBasedJWTAuth(next http.Handler) http.Handler {
+func CookieBasedJWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("token")
 		if err != nil {
@@ -30,5 +30,11 @@ func PerformCookieBasedJWTAuth(next http.Handler) http.Handler {
 		fmt.Printf("Token verfied successfully. Claims: %+v\\n", verifiedToken.Claims)
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func HeaderBasedJWTAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 	})
 }
