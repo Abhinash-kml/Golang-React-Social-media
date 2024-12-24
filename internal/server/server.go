@@ -80,3 +80,51 @@ func (s *Server) ServeAPI() {
 
 	fmt.Println("Listening on localhost:8000.")
 }
+
+func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) GetPostsOfUserid(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) AddNewUser(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) AddNewCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) UpdateCommentOfPostWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) DeleteCommentOfPostWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) DeletePostOfUserWithPostId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) UpdatePostOfUserWithPostId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) AddPostOfUser(w http.ResponseWriter, r *http.Request) {
+
+}
