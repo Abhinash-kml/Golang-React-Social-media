@@ -18,7 +18,7 @@ type User struct {
 	Country     string    `json:"country,omitempty"`
 	State       string    `json:"state,omitempty"`
 	City        string    `json:"city,omitempty"`
-	BanLevel    byte      `json:"ban_level,omitempty"`
+	BanLevel    byte      `json:"ban_level,omitempty"` // (0 - no ban, 1 - text chat, 2 - voice chat, 3 - both voice and text, 4 - complete ip ban)
 }
 
 func NewUser(name, email, password, dob string, ban_level byte) *User {
@@ -67,5 +67,18 @@ func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
 		RecieverID: receiverid,
 		Body:       content,
 		Timestamp:  time.Now(),
+	}
+}
+
+type Comment struct {
+	Id     uuid.UUID `json:"uuid,omitempty"`
+	PostId uuid.UUID `json:"postid,omitempty"`
+	Body   string    `json:"body,omitempty"`
+}
+
+func NewComment(postid uuid.UUID, body string) *Comment {
+	return &Comment{
+		PostId: postid,
+		Body:   body,
 	}
 }

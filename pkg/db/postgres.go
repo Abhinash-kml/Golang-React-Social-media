@@ -14,6 +14,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+
+	/*"github.com/golang-migrate/migrate/v4"*/
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type Postgres struct {
@@ -55,25 +59,15 @@ func (d *Postgres) Disconnect() {
 }
 
 func (d *Postgres) CreateTables() {
-	_, err := d.conn.Exec(`CREATE TABLE IF NOT EXISTS users(
-		id SERIAL,
-		userid uuid UNIQUE NOT NULL,
-		name VARCHAR UNIQUE NOT NULL,
-		email VARCHAR,
-		password VARCHAR,
-		dob	VARCHAR,
-		country VARCHAR,
-		state VARCHAR,
-		city VARCHAR,
-		created_at VARCHAR,
-		modified_at VARCHAR,
-		last_login VARCHAR)`)
-
-	// userid, name, email, password, dob, country, state, city, created_at, modified_at, last_login
-
-	if err != nil {
-		fmt.Println(err)
-	}
+	// m, err := migrate.New(
+	// 	"file://pkg/db/migrations",
+	// 	"postgresql://postgres:Abx305@localhost:5432/SocialMedia?sslmode=disable")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// if err := m.Up(); err != nil {
+	// 	log.Fatal(err)
+	// }
 }
 
 func (d *Postgres) GetUserWithID(logger *zap.Logger, id string) (*model.User, error) {
