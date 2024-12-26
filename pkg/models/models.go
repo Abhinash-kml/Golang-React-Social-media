@@ -7,18 +7,18 @@ import (
 )
 
 type User struct {
-	Id          uuid.UUID `json:"uuid"`
-	Name        string    `json:"name"`
-	Email       string    `json:"email"`
-	Password    string    `json:"password"`
-	Dob         string    `json:"dob"`
-	Created_at  string    `json:"created_at"`
-	Modified_at string    `json:"modified_at"`
-	Lastlogin   string    `json:"last_login"`
-	Country     string    `json:"country"`
-	State       string    `json:"state"`
-	City        string    `json:"city"`
-	BanLevel    byte      `json:"ban_level"`
+	Id          uuid.UUID `json:"uuid,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Email       string    `json:"email,omitempty"`
+	Password    string    `json:"password,omitempty"`
+	Dob         string    `json:"dob,omitempty"`
+	Created_at  string    `json:"created_at,omitempty"`
+	Modified_at string    `json:"modified_at,omitempty"`
+	Lastlogin   string    `json:"last_login,omitempty"`
+	Country     string    `json:"country,omitempty"`
+	State       string    `json:"state,omitempty"`
+	City        string    `json:"city,omitempty"`
+	BanLevel    byte      `json:"ban_level,omitempty"`
 }
 
 func NewUser(name, email, password, dob string, ban_level byte) *User {
@@ -32,14 +32,14 @@ func NewUser(name, email, password, dob string, ban_level byte) *User {
 }
 
 type Post struct {
-	UserId     uuid.UUID `json:"userid"`
-	Title      string    `json:"title"`
-	Created_at string    `json:"created_at"`
-	Body       string    `json:"body"`
-	Likes      int       `json:"likes"`
-	Comments   int       `json:"comments"`
-	MediaUrl   string    `json:"media_url"`
-	Hashtag    string    `json:"hashtag"`
+	UserId     uuid.UUID `json:"userid,omitempty"`
+	Title      string    `json:"title,omitempty"`
+	Created_at string    `json:"created_at,omitempty"`
+	Body       string    `json:"body,omitempty"`
+	Likes      int       `json:"likes,omitempty"`
+	Comments   int       `json:"comments,omitempty"`
+	MediaUrl   string    `json:"media_url,omitempty"`
+	Hashtag    string    `json:"hashtag,omitempty"`
 }
 
 func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments int) *Post {
@@ -54,11 +54,11 @@ func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments
 }
 
 type Message struct {
-	SenderID   uuid.UUID `json:"senderid"`
-	RecieverID uuid.UUID `json:"recieverid"`
-	Body       string    `json:"body"`
-	Status     int       `json:"status"`
-	Timestamp  time.Time `json:"timestamp"`
+	SenderID   uuid.UUID `json:"senderid,omitempty"`
+	RecieverID uuid.UUID `json:"recieverid,omitempty"`
+	Body       string    `json:"body,omitempty"`
+	Status     int       `json:"status,omitempty"`
+	Timestamp  time.Time `json:"timestamp,omitempty"`
 }
 
 func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
