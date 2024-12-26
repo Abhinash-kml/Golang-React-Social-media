@@ -20,6 +20,7 @@ type User struct {
 	City        string    `json:"city,omitempty"`
 	AvatarUrl   string    `json:"avatar_url,omitempty"`
 	BanLevel    byte      `json:"ban_level,omitempty"` // (0 - no ban, 1 - text chat, 2 - voice chat, 3 - both voice and text, 4 - complete ip ban)
+	BanDuration time.Time `json:"ban_duration,omitempty"`
 }
 
 func NewUser(name, email, password, dob string, ban_level byte) *User {

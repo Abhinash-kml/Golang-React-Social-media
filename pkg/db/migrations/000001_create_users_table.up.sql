@@ -4,20 +4,20 @@ AS
 ENUM('NONE', 'TEXT', 'VOICE', 'TEXTVOICE', 'IP');
 
 CREATE TABLE IF NOT EXISTS users(
-    id SERIAL,
-    userid UUID,
-    name VARCHAR(32),
-    email VARCHAR(64),
-    password VARCHAR(150),
-    dob DATE,
-    created_at TIMESTAMP,
-    modified_at TIMESTAMP,
-    last_login TIMESTAMP,
-    country VARCHAR(32),
-    city VARCHAR(32),
+    id SERIAL NOT NULL,
+    userid UUID UNIQUE NOT NULL,
+    name VARCHAR(32) UNIQUE NOT NULL,
+    email VARCHAR(64) UNIQUE NOT NULL,
+    password VARCHAR(150) NOT NULL,
+    dob DATE NOT NULL DEFAULT(CURRENT_DATE),
+    created_at TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
+    modified_at TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
+    last_login TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
+    country VARCHAR(32) NOT NULL DEFAULT('India'),
+    city VARCHAR(32) NOT NULL DEFAULT('Kolkata'),
     avatar_url VARCHAR(128),
-    ban_level BAN_LEVEL,
-    ban_duration TIME(6),
+    ban_level BAN_LEVEL DEFAULT('NONE'),
+    ban_duration TIME(6) DEFAULT(0),
 
     CONSTRAINT users_userid_pkey
     PRIMARY KEY(userid)

@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS messages(
-    id SERIAL,
-    senderid UUID,
-    recieverid UUID,
+    id SERIAL NOT NULL,
+    senderid UUID NOT NULL,
+    recieverid UUID NOT NULL,
     body VARCHAR(64) NOT NULL,
-    status INT NOT NULL,
-    time TIMESTAMP NOT NULL,
+    status INT NOT NULL DEFAULT(0),
+    time TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
 
     CONSTRAINT messages_id_pkey
     PRIMARY KEY(id),

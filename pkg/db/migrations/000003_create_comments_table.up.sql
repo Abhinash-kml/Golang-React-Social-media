@@ -1,7 +1,9 @@
 CREATE TABLE IF NOT EXISTS comments(
-    id UUID,
-    postid UUID,
-    body VARCHAR(64),
+    id UUID NOT NULL,
+    postid UUID NOT NULL,
+    body VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT(now()::TIMESTAMP),
+    modified_at TIMESTAMP DEFAULT(NULL),
 
     CONSTRAINT comments_id_pkey
     PRIMARY KEY(id),
