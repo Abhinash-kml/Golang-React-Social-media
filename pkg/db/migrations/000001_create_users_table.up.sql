@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users(
     last_login TIMESTAMP,
     country VARCHAR(32),
     city VARCHAR(32),
+    avatar_url VARCHAR(128),
     ban_level BAN_LEVEL,
     ban_duration TIME(6),
 

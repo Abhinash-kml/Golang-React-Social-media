@@ -18,6 +18,7 @@ type User struct {
 	Country     string    `json:"country,omitempty"`
 	State       string    `json:"state,omitempty"`
 	City        string    `json:"city,omitempty"`
+	AvatarUrl   string    `json:"avatar_url,omitempty"`
 	BanLevel    byte      `json:"ban_level,omitempty"` // (0 - no ban, 1 - text chat, 2 - voice chat, 3 - both voice and text, 4 - complete ip ban)
 }
 
