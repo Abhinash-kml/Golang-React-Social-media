@@ -389,7 +389,7 @@ func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, r
 	)
 
 	for rows.Next() {
-		if err := rows.Scan(message.SenderID, message.RecieverID, message.Body, message.Status); err != nil {
+		if err := rows.Scan(&message.SenderID, &message.RecieverID, &message.Body, &message.Status); err != nil {
 			d.logger.Error("Error scanning row",
 				zap.String("function", "GetAllMessagesOfConversation"),
 				zap.Error(err))
@@ -417,7 +417,7 @@ func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, er
 	)
 
 	for rows.Next() {
-		if err := rows.Scan(message.SenderID, message.RecieverID, message.Body, message.Status, message.Timestamp); err != nil {
+		if err := rows.Scan(&message.SenderID, &message.RecieverID, &message.Body, &message.Status, &message.Timestamp); err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
@@ -447,7 +447,7 @@ func (d *Postgres) UpdateMessageOfConversation(ctx context.Context, senderId, re
 }
 
 func (d *Postgres) DeleteMessageOfConversation(ctx context.Context, senderId, receiverId uuid.UUID, messageId int) (bool, error) {
-	row := d.primary.QueryRow("DELETE FROM messages WHERE senderid = $1 AND receiverid = $2 AND id = $3 RETURNING senderid, receiverid;", senderId, receiverId, messageId)
+	row := d.primary.QueryRowContext(ctx, "DELETE FROM messages WHERE senderid = $1 AND receiverid = $2 AND id = $3 RETURNING senderid, receiverid;", senderId, receiverId, messageId)
 	var sender_id, receiver_id uuid.UUID
 	if err := row.Scan(&sender_id, &receiver_id); err != nil {
 		d.logger.Error("Error scanning row",
@@ -483,7 +483,7 @@ func (d *Postgres) InsertPost(ctx context.Context, uuId uuid.UUID, body, hashtag
 }
 
 func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) *model.Post {
-	row := d.primary.QueryRow("SELECT * FROM posts WHERE id = $1;", uuId)
+	row := d.primary.QueryRowContext(ctx, "SELECT * FROM posts WHERE id = $1;", uuId)
 	post := &model.Post{}
 
 	if err := row.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
