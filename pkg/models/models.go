@@ -34,14 +34,16 @@ func NewUser(name, email, password, dob string, ban_level byte) *User {
 }
 
 type Post struct {
-	UserId     uuid.UUID `json:"userid,omitempty"`
-	Title      string    `json:"title,omitempty"`
-	Created_at string    `json:"created_at,omitempty"`
-	Body       string    `json:"body,omitempty"`
-	Likes      int       `json:"likes,omitempty"`
-	Comments   int       `json:"comments,omitempty"`
-	MediaUrl   string    `json:"media_url,omitempty"`
-	Hashtag    string    `json:"hashtag,omitempty"`
+	Id          int       `json:"id,omitempty"`
+	UserId      uuid.UUID `json:"userid,omitempty"`
+	Title       string    `json:"title,omitempty"`
+	Created_at  string    `json:"created_at,omitempty"`
+	Modified_at string    `json:"modified_at,omitempty"`
+	Body        string    `json:"body,omitempty"`
+	Likes       int       `json:"likes,omitempty"`
+	Comments    int       `json:"comments,omitempty"`
+	MediaUrl    string    `json:"media_url,omitempty"`
+	Hashtag     string    `json:"hashtag,omitempty"`
 }
 
 func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments int) *Post {
