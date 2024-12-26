@@ -201,24 +201,6 @@ func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 	return users, nil
 }
 
-func (d *Postgres) DeleteUserWithId(ctx context.Context, userid uuid.UUID) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE userid = $1 RETURNING userid;", userid)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "DeleteUserWithId"),
-			zap.Error(err))
-
-		return false, err
-	}
-
-	if returnedId != userid {
-		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithId()")
-	}
-
-	return true, nil
-}
-
 func (d *Postgres) InsertUser(ctx context.Context, fullname, email, password, dob, country, state, city, avatar_url string) (bool, error) {
 	uuId, _ := uuid.NewRandom()
 	row := d.primary.QueryRowContext(ctx, `INSERT INTO users(userid, name, email, password, dob, country, state, city, avatar_url)
@@ -242,6 +224,68 @@ func (d *Postgres) InsertUser(ctx context.Context, fullname, email, password, do
 	}
 
 	return true, nil
+}
+
+func (d *Postgres) DeleteUserWithId(ctx context.Context, userid uuid.UUID) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE userid = $1 RETURNING userid;", userid)
+	var returnedId uuid.UUID
+	if err := row.Scan(&returnedId); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("Function", "DeleteUserWithId"),
+			zap.Error(err))
+
+		return false, err
+	}
+
+	if returnedId != userid {
+		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithId()")
+	}
+
+	return true, nil
+}
+
+func (d *Postgres) DeleteUserWithName(ctx context.Context, name string) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE name = $1 RETURNING name;", name)
+	var returnedName string
+	if err := row.Scan(&returnedName); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("Function", "DeleteUserWithName"),
+			zap.Error(err))
+
+		return false, err
+	}
+
+	if returnedName != name {
+		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithName()")
+	}
+
+	return true, nil
+}
+
+func (d *Postgres) DeleteUserWithEmail(ctx context.Context, email string) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE email = $1 RETURNING email;", email)
+	var returnedMail string
+	if err := row.Scan(&returnedMail); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("Function", "DeleteUserWithEmail"),
+			zap.Error(err))
+
+		return false, err
+	}
+
+	if returnedMail != email {
+		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithEmail()")
+	}
+
+	return true, nil
+}
+
+func (d *Postgres) DeleteUsersWithAttribute(attribute string) (bool, int, error) {
+	return true, 0, nil
+}
+
+func (d *Postgres) DeleteAllUsers(attribute string) (bool, int, error) {
+	return true, 0, nil
 }
 
 func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string) (string, error) {
@@ -629,4 +673,20 @@ func (d *Postgres) DeleteAllPosts(ctx context.Context) (bool, int, error) {
 
 	rowsEffected, _ := result.RowsAffected()
 	return true, int(rowsEffected), nil
+}
+
+func (d *Postgres) GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*model.Comment, error) {
+	return nil, nil
+}
+
+func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*model.Comment, error) {
+	return nil, nil
+}
+
+func (d *Postgres) DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error) {
+	return true, nil
+}
+
+func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, error) {
+	return true, nil
 }
