@@ -75,14 +75,17 @@ func NewMessage(senderid, receiverid uuid.UUID, content string) *Message {
 }
 
 type Comment struct {
-	Id     uuid.UUID `json:"uuid,omitempty"`
-	PostId uuid.UUID `json:"postid,omitempty"`
-	Body   string    `json:"body,omitempty"`
+	Id          uuid.UUID `json:"uuid,omitempty"`
+	PostId      uuid.UUID `json:"postid,omitempty"`
+	Body        string    `json:"body,omitempty"`
+	Created_at  time.Time `json:"created_at,omitempty"`
+	Modified_at time.Time `json:"modified_at,omitempty"`
 }
 
-func NewComment(postid uuid.UUID, body string) *Comment {
+func NewComment(postid uuid.UUID, body string, created_at time.Time) *Comment {
 	return &Comment{
-		PostId: postid,
-		Body:   body,
+		PostId:     postid,
+		Body:       body,
+		Created_at: created_at,
 	}
 }

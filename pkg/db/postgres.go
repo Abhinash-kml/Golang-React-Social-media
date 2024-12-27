@@ -170,6 +170,24 @@ func (d *Postgres) UpdateUserWithId(ctx context.Context, userid uuid.UUID, name,
 	return true, nil
 }
 
+func (d *Postgres) UpdateUserWithName(ctx context.Context, oldName, newName, email, country, state string) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "UPDATE users SET name = $1, email = $2, country = $3, state = $4 WHERE name = $5 RETURNING userid;", newName, email, country, state, oldName)
+	var returnedName string
+	if err := row.Scan(&returnedName); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("Function", "UpdateUserWithId"),
+			zap.String("Error", err.Error()))
+
+		return false, err
+	}
+
+	if returnedName != newName {
+		return false, errors.New("returned newname is not same as supplied newname in UpdateUserWithId()")
+	}
+
+	return true, nil
+}
+
 func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 	users := make([]*model.User, 1)
 	var user model.User
@@ -649,7 +667,7 @@ func (d *Postgres) DeletePostsOfHashtag(ctx context.Context, hashtag string) (bo
 	if err != nil {
 		if err != sql.ErrNoRows {
 			d.logger.Error("No rows in result set",
-				zap.String("function", "DeletePostsOfUser"),
+				zap.String("function", "DeletePostsOfHashtag"),
 				zap.Error(err))
 
 			return false, 0, err
@@ -664,7 +682,7 @@ func (d *Postgres) DeleteAllPosts(ctx context.Context) (bool, int, error) {
 	if err != nil {
 		if err != sql.ErrNoRows {
 			d.logger.Error("No rows in result set",
-				zap.String("function", "DeletePostsOfUser"),
+				zap.String("function", "DeleteAllPosts"),
 				zap.Error(err))
 
 			return false, 0, err
@@ -676,17 +694,82 @@ func (d *Postgres) DeleteAllPosts(ctx context.Context) (bool, int, error) {
 }
 
 func (d *Postgres) GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*model.Comment, error) {
-	return nil, nil
+	row := d.primary.QueryRowContext(ctx, "SELECT * FROM comments WHERE id = $1;", commentid)
+	comment := &model.Comment{}
+	if err := row.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("function", "GetCommentWithId"),
+			zap.Error(err))
+
+		return nil, err
+	}
+
+	return comment, nil
 }
 
 func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*model.Comment, error) {
-	return nil, nil
+	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM comments WHERE postid = $1;", postid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			d.logger.Error("No rows in result set",
+				zap.String("function", "GetCommentsOfPost"),
+				zap.Error(err))
+
+			rows.Close()
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	comments := make([]*model.Comment, 1)
+	comment := &model.Comment{}
+
+	for rows.Next() {
+		if err := rows.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
+			d.logger.Error("Error scanning row",
+				zap.String("function", "GetCommentsOfPost"),
+				zap.Error(err))
+
+			return nil, err
+		}
+
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
 }
 
 func (d *Postgres) DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "DELETE FROM comments WHERE id = $1 RETURNING id;", commentid)
+	var returnedId uuid.UUID
+	if err := row.Scan(&returnedId); err != nil {
+		d.logger.Error("Error scanning row",
+			zap.String("function", "GetCommentWithId"),
+			zap.Error(err))
+
+		return false, err
+	}
+
+	if returnedId != commentid {
+		return false, errors.New("the returned commentid doesnt match with supplied in DeleteCommentWithId()")
+	}
+
 	return true, nil
 }
 
-func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, error) {
-	return true, nil
+func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, int, error) {
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM comments WHERE postid = $1;")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			d.logger.Error("No rows to delete in result set",
+				zap.String("function", "DeleteCommentsOfPost"),
+				zap.Error(err))
+
+			return false, 0, err
+		}
+	}
+
+	deletedRows, _ := result.RowsAffected()
+	return true, int(deletedRows), nil
+
 }
