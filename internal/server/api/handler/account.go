@@ -11,11 +11,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r *http.Request) {
+func HandleLogin(repository db.Repository, w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	passwordFromDb, err := repo.GetPasswordOfUserWithEmail(logger, email)
+	passwordFromDb, err := repository.GetPasswordOfUserWithEmail(email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -57,7 +57,7 @@ func HandleLogin(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r
 	http.Redirect(w, r, "/", http.StatusSeeOther) // Redirect
 }
 
-func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, r *http.Request) {
+func HandleSignup(logger *zap.Logger, repository db.Repository, w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -73,7 +73,7 @@ func HandleSignup(logger *zap.Logger, repo *db.Postgres, w http.ResponseWriter, 
 		return
 	}
 
-	err = repo.InsertNewUserIntoDatabase(logger, name, email, string(hashedPassword))
+	err = repository.InsertNewUserIntoDatabase(logger, name, email, string(hashedPassword))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}

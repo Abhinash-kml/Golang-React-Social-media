@@ -48,6 +48,13 @@ func (d *Postgres) Connect(ctx context.Context) {
 	}
 
 	fmt.Println("Connected to postgres.")
+
+	REPLICA_DB_URL := os.Getenv("REPLICA_DATABASE_URL")
+	if REPLICA_DB_URL == "" {
+		d.replica = nil
+		fmt.Println("The replication database is not setup, no replication will take place.")
+	}
+
 	d.CreateTables()
 }
 
@@ -298,11 +305,11 @@ func (d *Postgres) DeleteUserWithEmail(ctx context.Context, email string) (bool,
 	return true, nil
 }
 
-func (d *Postgres) DeleteUsersWithAttribute(attribute string) (bool, int, error) {
+func (d *Postgres) DeleteUsersWithAttribute(ctx context.Context, attribute string) (bool, int, error) {
 	return true, 0, nil
 }
 
-func (d *Postgres) DeleteAllUsers(attribute string) (bool, int, error) {
+func (d *Postgres) DeleteAllUsers(ctx context.Context) (bool, int, error) {
 	return true, 0, nil
 }
 
@@ -392,14 +399,19 @@ func (d *Postgres) InsertMessageIntoConversation(ctx context.Context, message *m
 	return false, errors.New("something wrong happened in InsertMessageInDb()")
 }
 
-func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, receiverId uuid.UUID) []*model.Message {
+func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, receiverId uuid.UUID) ([]*model.Message, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT senderid, recieverid, body, status FROM messages WHERE senderid IN($1, $2) AND recieverid IN($1, $2);", senderId, receiverId)
 	if err != nil {
-		d.logger.Error("Error scanning rows",
-			zap.String("function", "GetAllMessagesOfConversation"),
-			zap.Error(err))
-		return nil
+		if err == sql.ErrNoRows {
+			d.logger.Error("No rows in result set",
+				zap.String("function", "GetAllMessagesOfConversation"),
+				zap.Error(err))
+
+			rows.Close()
+			return nil, err
+		}
 	}
+	defer rows.Close()
 
 	var (
 		messages []*model.Message
@@ -411,13 +423,14 @@ func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, r
 			d.logger.Error("Error scanning row",
 				zap.String("function", "GetAllMessagesOfConversation"),
 				zap.Error(err))
-			return nil
+
+			return nil, err
 		}
 
 		messages = append(messages, message)
 	}
 
-	return messages
+	return messages, nil
 }
 
 func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, error) {
@@ -500,7 +513,7 @@ func (d *Postgres) InsertPost(ctx context.Context, uuId uuid.UUID, body, hashtag
 	return true, nil
 }
 
-func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) *model.Post {
+func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) (*model.Post, error) {
 	row := d.primary.QueryRowContext(ctx, "SELECT * FROM posts WHERE id = $1;", uuId)
 	post := &model.Post{}
 
@@ -509,10 +522,10 @@ func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) *model.Pos
 			zap.String("function", "GetPostWithId"),
 			zap.Error(err))
 
-		return nil
+		return nil, err
 	}
 
-	return post
+	return post, nil
 }
 
 func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*model.Post, error) {
@@ -535,7 +548,7 @@ func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*mod
 	for rows.Next() {
 		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
 			d.logger.Error("Error scanning row",
-				zap.String("function", "GetPostsOfId"),
+				zap.String("function", "GetPostsOfUser"),
 				zap.Error(err))
 
 			return nil, err
@@ -647,7 +660,7 @@ func (d *Postgres) DeletePostWithId(ctx context.Context, uuId uuid.UUID) (bool, 
 	return true, nil
 }
 
-func (d *Postgres) DeletePostsOfUser(ctx context.Context, userId string) (bool, int, error) {
+func (d *Postgres) DeletePostsOfUser(ctx context.Context, userId uuid.UUID) (bool, int, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM posts WHERE userid = $1;", userId)
 	if err != nil {
 		if err != sql.ErrNoRows {

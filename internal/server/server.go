@@ -15,7 +15,7 @@ import (
 
 type Server struct {
 	logger     *zap.Logger
-	repo       *db.Postgres
+	repository db.Repository
 	router     *mux.Router
 	httpserver *http.Server
 }
@@ -25,9 +25,9 @@ func NewServer() *Server {
 	muxRouter := mux.NewRouter()
 
 	return &Server{
-		logger: newlogger,
-		repo:   &db.Postgres{},
-		router: muxRouter,
+		logger:     newlogger,
+		repository: &db.Postgres{},
+		router:     muxRouter,
 		httpserver: &http.Server{
 			Addr:         ":8000",
 			ReadTimeout:  time.Second * 15,
@@ -48,19 +48,19 @@ func (s *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	s.httpserver.Shutdown(ctx)
-	s.repo.Disconnect()
+	s.repository.Disconnect(context.Background())
 }
 
 func (s *Server) InitializeDatabaseConnection() {
-	s.repo.Connect()
+	s.repository.Connect(context.Background())
 }
 
 func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	handler.HandleLogin(s.logger, s.repo, w, r)
+	handler.HandleLogin(s.repository, w, r)
 }
 
 func (s *Server) HandleSignup(w http.ResponseWriter, r *http.Request) {
-	handler.HandleSignup(s.logger, s.repo, w, r)
+	handler.HandleSignup(s.logger, s.repository, w, r)
 }
 
 func (s *Server) PrivateHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	case "userid":
 		{
 			fmt.Println("attribute is userid")
-			user, err := s.repo.GetUserWithID(s.logger, attribute)
+			user, err := s.repository.GetUserWithId(context.Background(), attribute)
 			if err != nil {
 				s.logger.Error("Error getting user with userid from database",
 					zap.String("Error", err.Error()))
@@ -108,7 +108,7 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	case "name":
 		{
 			fmt.Println("attribute is name")
-			user, err := s.repo.GetUserWithName(s.logger, attribute)
+			user, err := s.repository.GetUserWithName(context.Background(), attribute)
 			if err != nil {
 				s.logger.Error("Error getting user with name from database",
 					zap.String("Error", err.Error()))
@@ -121,7 +121,7 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 		}
 	case "email":
 		fmt.Println("attribute is email")
-		user, err := s.repo.GetUserWithEmail(s.logger, attribute)
+		user, err := s.repository.GetUserWithEmail(context.Background(), attribute)
 		if err != nil {
 			s.logger.Error("Error getting user with email from database",
 				zap.String("Error", err.Error()))
