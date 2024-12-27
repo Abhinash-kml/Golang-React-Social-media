@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ func HandleLogin(repository db.Repository, w http.ResponseWriter, r *http.Reques
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	passwordFromDb, err := repository.GetPasswordOfUserWithEmail(email)
+	passwordFromDb, err := repository.GetPasswordOfUserWithEmail(context.Background(), email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -73,8 +74,8 @@ func HandleSignup(logger *zap.Logger, repository db.Repository, w http.ResponseW
 		return
 	}
 
-	err = repository.InsertNewUserIntoDatabase(logger, name, email, string(hashedPassword))
-	if err != nil {
+	ok, err := repository.InsertUser(context.Background(), name, email, string(hashedPassword), "2001-09-13", "India", "Bengal", "Kolkata", "www.imgur.com")
+	if !ok || err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 

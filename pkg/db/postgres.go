@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	/*"github.com/golang-migrate/migrate/v4"*/
+
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -27,7 +28,7 @@ type Postgres struct {
 	logger  *zap.Logger
 }
 
-func (d *Postgres) Connect(ctx context.Context) {
+func (d *Postgres) Connect() {
 	fmt.Println("Establising connection to postgres...")
 
 	err := godotenv.Load()
@@ -56,15 +57,17 @@ func (d *Postgres) Connect(ctx context.Context) {
 	}
 
 	d.CreateTables()
+	d.logger, _ = zap.NewProduction()
 }
 
-func (d *Postgres) Disconnect(ctx context.Context) {
+func (d *Postgres) Disconnect() {
 	if d.primary == nil {
 		fmt.Println("Trying to close a connection which is already nil")
 		return
 	}
 
 	d.primary.Close()
+	d.logger.Sync()
 	fmt.Println("Disconnected from postgres.")
 }
 
@@ -113,7 +116,7 @@ func (d *Postgres) GetUserWithName(ctx context.Context, name string) (*model.Use
 func (d *Postgres) GetUserWithEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
 
-	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE userid = $1;", email)
+	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE email = $1;", email)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
 		d.logger.Error("Error scanning row",
 			zap.String("function", "GetUserWithEmail"),
@@ -315,8 +318,8 @@ func (d *Postgres) DeleteAllUsers(ctx context.Context) (bool, int, error) {
 
 func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string) (string, error) {
 	row := d.primary.QueryRowContext(ctx, "SELECT password FROM users WHERE email = $1;", email)
-	var returnedEmail string
-	if err := row.Scan(&returnedEmail); err != nil {
+	var returendPassword string
+	if err := row.Scan(&returendPassword); err != nil {
 		d.logger.Error("Error scanning row",
 			zap.String("Function", "GetPasswordOfUserWithEmail"),
 			zap.Error(err))
@@ -324,7 +327,7 @@ func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string)
 		return "", nil
 	}
 
-	return returnedEmail, nil
+	return returendPassword, nil
 }
 
 func (d *Postgres) InsertMediaWithId(ctx context.Context, postId uuid.UUID, url string) (bool, error) {
@@ -495,8 +498,8 @@ func (d *Postgres) DeleteMessageOfConversation(ctx context.Context, senderId, re
 	return true, nil
 }
 
-func (d *Postgres) InsertPost(ctx context.Context, uuId uuid.UUID, body, hashtag, title string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "INSERT INTO posts(userid, title, body, hashtag) VALUES($1, $2, $3, $4) returning userid;", uuId, title, body, hashtag)
+func (d *Postgres) InsertPost(ctx context.Context, userid uuid.UUID, body, hashtag, title string) (bool, error) {
+	row := d.primary.QueryRowContext(ctx, "INSERT INTO posts(userid, title, body, hashtag) VALUES($1, $2, $3, $4) returning userid;", userid, title, body, hashtag)
 	var returnedId uuid.UUID
 	if err := row.Scan(&returnedId); err != nil {
 		d.logger.Error("Error scanning row",
@@ -506,7 +509,7 @@ func (d *Postgres) InsertPost(ctx context.Context, uuId uuid.UUID, body, hashtag
 		return false, err
 	}
 
-	if returnedId != uuId {
+	if returnedId != userid {
 		return false, errors.New("the returned uuid from insertion is not same as supplied uuid in InsertPost()")
 	}
 

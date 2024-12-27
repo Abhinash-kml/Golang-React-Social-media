@@ -48,11 +48,11 @@ func (s *Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	s.httpserver.Shutdown(ctx)
-	s.repository.Disconnect(context.Background())
+	s.repository.Disconnect()
 }
 
 func (s *Server) InitializeDatabaseConnection() {
-	s.repository.Connect(context.Background())
+	s.repository.Connect()
 }
 
 func (s *Server) HandleLogin(w http.ResponseWriter, r *http.Request) {

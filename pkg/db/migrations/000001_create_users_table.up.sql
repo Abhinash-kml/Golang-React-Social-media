@@ -14,10 +14,11 @@ CREATE TABLE IF NOT EXISTS users(
     modified_at TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
     last_login TIMESTAMP NOT NULL DEFAULT(now()::TIMESTAMP),
     country VARCHAR(32) NOT NULL DEFAULT('India'),
+    state VARCHAR(32) NOT NULL DEFAULT('West Bengal'),
     city VARCHAR(32) NOT NULL DEFAULT('Kolkata'),
     avatar_url VARCHAR(128),
     ban_level BAN_LEVEL DEFAULT('NONE'),
-    ban_duration TIME(6) DEFAULT(0),
+    ban_duration TIMESTAMP,
 
     CONSTRAINT users_userid_pkey
     PRIMARY KEY(userid)
