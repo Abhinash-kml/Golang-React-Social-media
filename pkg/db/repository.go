@@ -38,7 +38,7 @@ type Repository interface {
 	DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error)
 	DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, int, error)
 	InsertMessageIntoConversation(ctx context.Context, message *model.Message) (bool, error)
-	UpdateMessageOfConversation(ctx context.Context, senderid uuid.UUID, recieverid uuid.UUID, newbody string) (bool, error)
+	UpdateMessageOfConversation(ctx context.Context, senderid uuid.UUID, recieverid uuid.UUID, messageid int, newbody string) (bool, error)
 	DeleteMessageOfConversation(ctx context.Context, senderid uuid.UUID, reciverid uuid.UUID, messageid int) (bool, error)
 	GetAllMessagesOfConversation(ctx context.Context, senderid uuid.UUID, reciverid uuid.UUID) ([]*model.Message, error)
 	GetAllMessagesInDB(ctx context.Context) ([]*model.Message, error)

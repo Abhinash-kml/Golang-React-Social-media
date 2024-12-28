@@ -110,7 +110,7 @@ func (d *Postgres) GetUserWithEmail(ctx context.Context, email string) (*model.U
 
 	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE email = $1;", email)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-		d.logger.Error("No rows in table")
+		d.logger.Error("No rows in table", zap.Error(err))
 
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (d *Postgres) InsertUser(ctx context.Context, fullname, email, password, do
 func (d *Postgres) DeleteUserWithId(ctx context.Context, userid uuid.UUID) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE userid = $1;", userid)
 	if err != nil {
-		d.logger.Error("Error deleting row", zap.Any("uuid", userid))
+		d.logger.Error("Error deleting row", zap.Any("uuid", userid), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -234,7 +234,7 @@ func (d *Postgres) DeleteUserWithId(ctx context.Context, userid uuid.UUID) (bool
 func (d *Postgres) DeleteUserWithName(ctx context.Context, name string) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE name = $1;", name)
 	if err != nil {
-		d.logger.Error("Error deleting row", zap.Any("name", name))
+		d.logger.Error("Error deleting row", zap.Any("name", name), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -246,7 +246,7 @@ func (d *Postgres) DeleteUserWithName(ctx context.Context, name string) (bool, e
 func (d *Postgres) DeleteUserWithEmail(ctx context.Context, email string) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE email = $1;", email)
 	if err != nil {
-		d.logger.Error("Error deleting row", zap.Any("email", email))
+		d.logger.Error("Error deleting row", zap.Any("email", email), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -262,7 +262,7 @@ func (d *Postgres) DeleteUsersWithAttribute(ctx context.Context, attribute strin
 func (d *Postgres) DeleteAllUsers(ctx context.Context) (bool, int, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM users;")
 	if err != nil {
-		d.logger.Error("Error deleting all users")
+		d.logger.Error("Error deleting all users", zap.Error(err))
 		return false, 0, err
 	}
 
@@ -289,7 +289,7 @@ func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string)
 func (d *Postgres) InsertMediaWithId(ctx context.Context, postId uuid.UUID, url string) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "INSERT INTO media(postid, url) VALUES($1, $2);", postId, url)
 	if err != nil {
-		d.logger.Error("Error inserting media")
+		d.logger.Error("Error inserting media", zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -301,7 +301,7 @@ func (d *Postgres) InsertMediaWithId(ctx context.Context, postId uuid.UUID, url 
 func (d *Postgres) UpdateMediaWithId(ctx context.Context, postId uuid.UUID, newUrl string) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "UPDATE media SET url = $1 WHERE postid = $2;", newUrl, postId)
 	if err != nil {
-		d.logger.Error("Cannot update media", zap.Any("uuid", postId))
+		d.logger.Error("Cannot update media", zap.Any("uuid", postId), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -312,7 +312,7 @@ func (d *Postgres) UpdateMediaWithId(ctx context.Context, postId uuid.UUID, newU
 func (d *Postgres) DeleteMediaWithId(ctx context.Context, postId uuid.UUID) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM media WHERE postid = $1;", postId)
 	if err != nil {
-		d.logger.Error("Cannot update media", zap.Any("uuid", postId))
+		d.logger.Error("Cannot update media", zap.Any("uuid", postId), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -323,7 +323,7 @@ func (d *Postgres) DeleteMediaWithId(ctx context.Context, postId uuid.UUID) (boo
 func (d *Postgres) InsertMessageIntoConversation(ctx context.Context, message *model.Message) (bool, error) {
 	result, err := d.primary.ExecContext(ctx, "INSERT INTO messages(senderid, recieverid, body) VALUES($1, $2, $3);", message.SenderID, message.RecieverID, message.Body)
 	if err != nil {
-		d.logger.Error("Error inserting message into conversation", zap.Any("message", *message))
+		d.logger.Error("Error inserting message into conversation", zap.Any("message", *message), zap.Error(err))
 		return false, err
 	} else if count, _ := result.RowsAffected(); count == 0 {
 		return false, nil
@@ -390,55 +390,37 @@ func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, er
 	return messages, nil
 }
 
-func (d *Postgres) UpdateMessageOfConversation(ctx context.Context, senderId, recieverId uuid.UUID, newBody string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "UPDATE messages SET body = $1 WHERE senderid = $2 AND recieverid = $3 RETURNING senderid, receiverid;", newBody, senderId, recieverId)
-	var sender_id, reciever_id uuid.UUID
-	if err := row.Scan(&sender_id, &reciever_id); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "UpdateMessageOfConversation"),
-			zap.Error(err))
-
+func (d *Postgres) UpdateMessageOfConversation(ctx context.Context, senderId, recieverId uuid.UUID, messageid int, newBody string) (bool, error) {
+	result, err := d.primary.ExecContext(ctx, "UPDATE messages SET body = $1 WHERE senderid = $2 AND recieverid = $3 AND id = $4;", newBody, senderId, recieverId, messageid)
+	if err != nil {
+		d.logger.Error("Error updating message of conversation", zap.Any("messageid", messageid), zap.Error(err))
 		return false, err
-	}
-
-	if sender_id != senderId || reciever_id != recieverId {
-		return false, errors.New("something wrong happened in UpdateMessageWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) DeleteMessageOfConversation(ctx context.Context, senderId, receiverId uuid.UUID, messageId int) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM messages WHERE senderid = $1 AND receiverid = $2 AND id = $3 RETURNING senderid, receiverid;", senderId, receiverId, messageId)
-	var sender_id, receiver_id uuid.UUID
-	if err := row.Scan(&sender_id, &receiver_id); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", ""),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM messages WHERE senderid = $1 AND receiverid = $2 AND id = $3;", senderId, receiverId, messageId)
+	if err != nil {
+		d.logger.Error("Error deleting message of conversation", zap.Any("messageid", messageId), zap.Error(err))
 		return false, err
-	}
-
-	if sender_id != senderId || receiver_id != receiverId {
-		return false, errors.New("something wrong happended in DeleteMessageOfConversation()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) InsertPost(ctx context.Context, userid uuid.UUID, body, hashtag, title string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "INSERT INTO posts(userid, title, body, hashtag) VALUES($1, $2, $3, $4) returning userid;", userid, title, body, hashtag)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "InsertPost"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "INSERT INTO posts(userid, title, body, hashtag) VALUES($1, $2, $3, $4);", userid, title, body, hashtag)
+	if err != nil {
+		d.logger.Error("Error inserting new post", zap.Error(err))
 		return false, err
-	}
-
-	if returnedId != userid {
-		return false, errors.New("the returned uuid from insertion is not same as supplied uuid in InsertPost()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -449,9 +431,7 @@ func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) (*model.Po
 	post := &model.Post{}
 
 	if err := row.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetPostWithId"),
-			zap.Error(err))
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
 	}
@@ -463,9 +443,7 @@ func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*mod
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts WHERE userid = $1;", userid)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "GetPostsOfUser"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -478,9 +456,7 @@ func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*mod
 
 	for rows.Next() {
 		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetPostsOfUser"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -495,9 +471,7 @@ func (d *Postgres) GetPostsOfHashtag(ctx context.Context, hashtag string) ([]*mo
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts WHERE hashtag = $1;", hashtag)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "GetPostsOfUser"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -510,9 +484,7 @@ func (d *Postgres) GetPostsOfHashtag(ctx context.Context, hashtag string) ([]*mo
 
 	for rows.Next() {
 		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetPostsOfHashtag"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -527,9 +499,7 @@ func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts ORDER BY title ASC;")
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "GetPostsOfUser"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -542,9 +512,7 @@ func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 
 	for rows.Next() {
 		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetAllPosts"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -556,36 +524,24 @@ func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 }
 
 func (d *Postgres) UpdatePostWithId(ctx context.Context, postId uuid.UUID, newTitle, newContent, hashtag string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "UPDATE posts SET title = $1, body = $2, hastag = $3, modified_at = $4 WHERE id = $5 RETURNING id;", newTitle, newContent, hashtag, time.Now(), postId)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "UpdatePostWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "UPDATE posts SET title = $1, body = $2, hastag = $3, modified_at = $4 WHERE id = $5;", newTitle, newContent, hashtag, time.Now(), postId)
+	if err != nil {
+		d.logger.Error("Error updating post", zap.Any("postid", postId), zap.Error(err))
 		return false, err
-	}
-
-	if returnedId != postId {
-		return false, errors.New("the returned uuid from update in not same as supplied uuid in UpdatePost()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) DeletePostWithId(ctx context.Context, uuId uuid.UUID) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM posts WHERE id = $1 returning id;", uuId)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "DeletePostWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM posts WHERE id = $1;", uuId)
+	if err != nil {
+		d.logger.Error("Error deleting post", zap.Any("postid", uuId), zap.Error(err))
 		return false, err
-	}
-
-	if returnedId != uuId {
-		return false, errors.New("the returned uuid from delete is not same as supplied uuid in DeletePostWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -595,45 +551,51 @@ func (d *Postgres) DeletePostsOfUser(ctx context.Context, userId uuid.UUID) (boo
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM posts WHERE userid = $1;", userId)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "DeletePostsOfUser"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			return false, 0, err
 		}
 	}
 
 	rowsEffected, _ := result.RowsAffected()
+	if rowsEffected == 0 {
+		return false, 0, nil
+	}
+
 	return true, int(rowsEffected), nil
 }
 func (d *Postgres) DeletePostsOfHashtag(ctx context.Context, hashtag string) (bool, int, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM posts WHERE hashtag = $1;", hashtag)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "DeletePostsOfHashtag"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			return false, 0, err
 		}
 	}
 
 	rowsEffected, _ := result.RowsAffected()
+	if rowsEffected == 0 {
+		return false, 0, nil
+	}
+
 	return true, int(rowsEffected), nil
 }
 func (d *Postgres) DeleteAllPosts(ctx context.Context) (bool, int, error) {
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM posts;")
 	if err != nil {
 		if err != sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "DeleteAllPosts"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			return false, 0, err
 		}
 	}
 
 	rowsEffected, _ := result.RowsAffected()
+	if rowsEffected == 0 {
+		return false, 0, nil
+	}
+
 	return true, int(rowsEffected), nil
 }
 
@@ -641,9 +603,7 @@ func (d *Postgres) GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*
 	row := d.primary.QueryRowContext(ctx, "SELECT * FROM comments WHERE id = $1;", commentid)
 	comment := &model.Comment{}
 	if err := row.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetCommentWithId"),
-			zap.Error(err))
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
 	}
@@ -655,9 +615,7 @@ func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM comments WHERE postid = $1;", postid)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "GetCommentsOfPost"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -670,9 +628,7 @@ func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*
 
 	for rows.Next() {
 		if err := rows.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetCommentsOfPost"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -684,18 +640,12 @@ func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*
 }
 
 func (d *Postgres) DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM comments WHERE id = $1 RETURNING id;", commentid)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetCommentWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM comments WHERE id = $1;", commentid)
+	if err != nil {
+		d.logger.Error("Error updating message of conversation", zap.Any("commentid", commentid), zap.Error(err))
 		return false, err
-	}
-
-	if returnedId != commentid {
-		return false, errors.New("the returned commentid doesnt match with supplied in DeleteCommentWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -705,15 +655,16 @@ func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (
 	result, err := d.primary.ExecContext(ctx, "DELETE FROM comments WHERE postid = $1;")
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows to delete in result set",
-				zap.String("function", "DeleteCommentsOfPost"),
-				zap.Error(err))
+			d.logger.Error("No rows to delete in result set", zap.Error(err))
 
 			return false, 0, err
 		}
 	}
 
 	deletedRows, _ := result.RowsAffected()
-	return true, int(deletedRows), nil
+	if deletedRows == 0 {
+		return false, 0, nil
+	}
 
+	return true, int(deletedRows), nil
 }
