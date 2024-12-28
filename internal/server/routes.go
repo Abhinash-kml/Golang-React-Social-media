@@ -15,7 +15,7 @@ func (s *Server) SetupRoutes() {
 	// public.Use(middleware.RateLimit)
 	private := s.router.PathPrefix("/api/private").Subrouter()
 	private.Use(middleware.LoggingMiddleware)
-	private.Use(middleware.CookieBasedJWTAuth)
+	//private.Use(middleware.CookieBasedJWTAuth)
 	// private.Use(middleware.RateLimit)
 
 	public.HandleFunc("/user", s.GetUserWithAttribute).Methods("GET")
