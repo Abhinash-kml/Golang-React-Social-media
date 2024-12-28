@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -123,10 +124,12 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("attribute is email")
 		user, err := s.repository.GetUserWithEmail(context.Background(), attribute)
 		if err != nil {
-			s.logger.Error("Error getting user with email from database",
-				zap.String("Error", err.Error()))
-
-			w.WriteHeader(http.StatusInternalServerError)
+			if err == sql.ErrNoRows {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("requested record doesn't exit"))
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
 		}
 
 		json.NewEncoder(w).Encode(user)

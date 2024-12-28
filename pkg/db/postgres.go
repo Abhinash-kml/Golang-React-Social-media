@@ -13,7 +13,6 @@ import (
 
 	model "github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 
 	/*"github.com/golang-migrate/migrate/v4"*/
@@ -31,22 +30,19 @@ type Postgres struct {
 func (d *Postgres) Connect() {
 	fmt.Println("Establising connection to postgres...")
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Couldn't load .env file")
-	}
-
 	DATABASE_URL := os.Getenv("DATABASE_URL")
 
-	d.primary, err = sql.Open("postgres", DATABASE_URL)
+	conn, err := sql.Open("postgres", DATABASE_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if d.primary == nil {
+	if conn == nil {
 		log.Fatal("Database connection failed.")
 		return
 	}
+
+	d.primary = conn
 
 	fmt.Println("Connected to postgres.")
 
@@ -88,9 +84,7 @@ func (d *Postgres) GetUserWithId(ctx context.Context, id string) (*model.User, e
 
 	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE userid = $1;", id)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetUserWithId"),
-			zap.Error(err))
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
 	}
@@ -103,9 +97,7 @@ func (d *Postgres) GetUserWithName(ctx context.Context, name string) (*model.Use
 
 	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE name = $1;", name)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetUserWithName"),
-			zap.Error(err))
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
 	}
@@ -118,9 +110,7 @@ func (d *Postgres) GetUserWithEmail(ctx context.Context, email string) (*model.U
 
 	row := d.primary.QueryRowContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE email = $1;", email)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "GetUserWithEmail"),
-			zap.Error(err))
+		d.logger.Error("No rows in table")
 
 		return nil, err
 	}
@@ -135,9 +125,7 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 	rows, err := d.primary.QueryContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE $1 = $2;", attribute, value)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in table",
-				zap.String("function", "GetUsersWithAttribute"),
-				zap.Error(err))
+			d.logger.Error("No rows in table", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -147,9 +135,7 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 
 	for rows.Next() {
 		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetUsersWithAttribute"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -159,40 +145,25 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 	return users, nil
 }
 
-/*
-* Todo: add this function into interface
- */
 func (d *Postgres) UpdateUserWithId(ctx context.Context, userid uuid.UUID, name, email, country, state string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "UPDATE users SET name = $1, email = $2, country = $3, state = $4 WHERE userid = $5 RETURNING userid;", name, email, country, state, userid)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "UpdateUserWithId"),
-			zap.String("Error", err.Error()))
-
+	result, err := d.primary.ExecContext(ctx, "UPDATE users SET name = $1, email = $2, country = $3, state = $4 WHERE userid = $5;", name, email, country, state, userid)
+	if err != nil {
+		d.logger.Error("Error updating row", zap.Error(err), zap.Any("uuid", userid))
 		return false, err
-	}
-
-	if returnedId != userid {
-		return false, errors.New("returned userid is not same as supplied userid in UpdateUserWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) UpdateUserWithName(ctx context.Context, oldName, newName, email, country, state string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "UPDATE users SET name = $1, email = $2, country = $3, state = $4 WHERE name = $5 RETURNING userid;", newName, email, country, state, oldName)
-	var returnedName string
-	if err := row.Scan(&returnedName); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "UpdateUserWithId"),
-			zap.String("Error", err.Error()))
-
+	result, err := d.primary.ExecContext(ctx, "UPDATE users SET name = $1, email = $2, country = $3, state = $4 WHERE name = $5;", newName, email, country, state, oldName)
+	if err != nil {
+		d.logger.Error("Error updating row", zap.Error(err), zap.Any("name", oldName))
 		return false, err
-	}
-
-	if returnedName != newName {
-		return false, errors.New("returned newname is not same as supplied newname in UpdateUserWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -205,9 +176,7 @@ func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users;")
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in table",
-				zap.String("function", "GetUsersWithAttribute"),
-				zap.Error(err))
+			d.logger.Error("No rows in table", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -217,9 +186,7 @@ func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 
 	for rows.Next() {
 		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetUsersWithAttribute"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -240,9 +207,7 @@ func (d *Postgres) InsertUser(ctx context.Context, fullname, email, password, do
 
 	var returnedId uuid.UUID
 	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "InsertUser"),
-			zap.Error(err))
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return false, err
 	}
@@ -255,54 +220,36 @@ func (d *Postgres) InsertUser(ctx context.Context, fullname, email, password, do
 }
 
 func (d *Postgres) DeleteUserWithId(ctx context.Context, userid uuid.UUID) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE userid = $1 RETURNING userid;", userid)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "DeleteUserWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE userid = $1;", userid)
+	if err != nil {
+		d.logger.Error("Error deleting row", zap.Any("uuid", userid))
 		return false, err
-	}
-
-	if returnedId != userid {
-		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithId()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) DeleteUserWithName(ctx context.Context, name string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE name = $1 RETURNING name;", name)
-	var returnedName string
-	if err := row.Scan(&returnedName); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "DeleteUserWithName"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE name = $1;", name)
+	if err != nil {
+		d.logger.Error("Error deleting row", zap.Any("name", name))
 		return false, err
-	}
-
-	if returnedName != name {
-		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithName()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) DeleteUserWithEmail(ctx context.Context, email string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM users WHERE email = $1 RETURNING email;", email)
-	var returnedMail string
-	if err := row.Scan(&returnedMail); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "DeleteUserWithEmail"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM users WHERE email = $1;", email)
+	if err != nil {
+		d.logger.Error("Error deleting row", zap.Any("email", email))
 		return false, err
-	}
-
-	if returnedMail != email {
-		return false, errors.New("returned userid is not same as supplied userid in DeleteUserWithEmail()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
@@ -313,21 +260,30 @@ func (d *Postgres) DeleteUsersWithAttribute(ctx context.Context, attribute strin
 }
 
 func (d *Postgres) DeleteAllUsers(ctx context.Context) (bool, int, error) {
-	return true, 0, nil
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM users;")
+	if err != nil {
+		d.logger.Error("Error deleting all users")
+		return false, 0, err
+	}
+
+	rowsEffected, _ := result.RowsAffected()
+	if rowsEffected == 0 {
+		return false, 0, nil
+	}
+
+	return true, int(rowsEffected), nil
 }
 
 func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string) (string, error) {
 	row := d.primary.QueryRowContext(ctx, "SELECT password FROM users WHERE email = $1;", email)
-	var returendPassword string
-	if err := row.Scan(&returendPassword); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("Function", "GetPasswordOfUserWithEmail"),
-			zap.Error(err))
+	var password string
+	if err := row.Scan(&password); err != nil {
+		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return "", nil
 	}
 
-	return returendPassword, nil
+	return password, nil
 }
 
 func (d *Postgres) InsertMediaWithId(ctx context.Context, postId uuid.UUID, url string) (bool, error) {
