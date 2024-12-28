@@ -287,84 +287,56 @@ func (d *Postgres) GetPasswordOfUserWithEmail(ctx context.Context, email string)
 }
 
 func (d *Postgres) InsertMediaWithId(ctx context.Context, postId uuid.UUID, url string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "INSERT INTO media(postid, url) VALUES($1, $2) returning postid;", postId, url)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "InsertMediaWithId"),
-			zap.String("Error", err.Error()))
-
+	result, err := d.primary.ExecContext(ctx, "INSERT INTO media(postid, url) VALUES($1, $2);", postId, url)
+	if err != nil {
+		d.logger.Error("Error inserting media")
 		return false, err
-	}
-
-	if returnedId != postId {
-		return false, errors.New("the returned postid is different from the supplied post id in InsertMedia()")
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
 	return true, nil
 }
 
 func (d *Postgres) UpdateMediaWithId(ctx context.Context, postId uuid.UUID, newUrl string) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "UPDATE media SET url = $1 WHERE postid = $2 returning postid;", newUrl, postId)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "UpdateMediaWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "UPDATE media SET url = $1 WHERE postid = $2;", newUrl, postId)
+	if err != nil {
+		d.logger.Error("Cannot update media", zap.Any("uuid", postId))
 		return false, err
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
-
-	if returnedId != postId {
-		return false, errors.New("the returned postid is different from the supplied post id in UpdateMedia()")
-	}
-
 	return true, nil
 }
 
 func (d *Postgres) DeleteMediaWithId(ctx context.Context, postId uuid.UUID) (bool, error) {
-	row := d.primary.QueryRowContext(ctx, "DELETE FROM media WHERE postid = $1 returning postid;", postId)
-	var returnedId uuid.UUID
-	if err := row.Scan(&returnedId); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "DeleteMediaWithId"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "DELETE FROM media WHERE postid = $1;", postId)
+	if err != nil {
+		d.logger.Error("Cannot update media", zap.Any("uuid", postId))
 		return false, err
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
-
-	if returnedId != postId {
-		return false, errors.New("the returned postid is different from the supplied post id in DeleteMedia()")
-	}
-
 	return true, nil
 }
 
 func (d *Postgres) InsertMessageIntoConversation(ctx context.Context, message *model.Message) (bool, error) {
-	var sender_id, reciever_id uuid.UUID
-	row := d.primary.QueryRowContext(ctx, "INSERT INTO messages(senderid, recieverid, body) VALUES($1, $2, $3) RETURNING senderid, recieverid;", message.SenderID, message.RecieverID, message.Body)
-	if err := row.Scan(&sender_id, &reciever_id); err != nil {
-		d.logger.Error("Error scanning row",
-			zap.String("function", "InsertMessageIntoConversation"),
-			zap.Error(err))
-
+	result, err := d.primary.ExecContext(ctx, "INSERT INTO messages(senderid, recieverid, body) VALUES($1, $2, $3);", message.SenderID, message.RecieverID, message.Body)
+	if err != nil {
+		d.logger.Error("Error inserting message into conversation", zap.Any("message", *message))
 		return false, err
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
 	}
 
-	if sender_id == message.SenderID && reciever_id == message.RecieverID {
-		return true, nil
-	}
-
-	return false, errors.New("something wrong happened in InsertMessageInDb()")
+	return true, nil
 }
 
 func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, receiverId uuid.UUID) ([]*model.Message, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT senderid, recieverid, body, status FROM messages WHERE senderid IN($1, $2) AND recieverid IN($1, $2);", senderId, receiverId)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set",
-				zap.String("function", "GetAllMessagesOfConversation"),
-				zap.Error(err))
+			d.logger.Error("No rows in result set", zap.Error(err))
 
 			rows.Close()
 			return nil, err
@@ -379,9 +351,7 @@ func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, r
 
 	for rows.Next() {
 		if err := rows.Scan(&message.SenderID, &message.RecieverID, &message.Body, &message.Status); err != nil {
-			d.logger.Error("Error scanning row",
-				zap.String("function", "GetAllMessagesOfConversation"),
-				zap.Error(err))
+			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
@@ -396,6 +366,7 @@ func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, er
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM messages;")
 	if err != nil {
 		if err == sql.ErrNoRows {
+			d.logger.Error("No rows in result set", zap.Error(err))
 			return nil, err
 		}
 	}
@@ -409,6 +380,7 @@ func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, er
 	for rows.Next() {
 		if err := rows.Scan(&message.SenderID, &message.RecieverID, &message.Body, &message.Status, &message.Timestamp); err != nil {
 			fmt.Println(err)
+			d.logger.Error("Error scanning row", zap.Error(err))
 			return nil, err
 		}
 
