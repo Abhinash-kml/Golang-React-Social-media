@@ -8,8 +8,11 @@ import (
 )
 
 type Repository interface {
+	// Main connection and disconnection
 	Connect()
 	Disconnect()
+
+	// User specific functions
 	GetUserWithId(ctx context.Context, uuid string) (*model.User, error)
 	GetUserWithName(ctx context.Context, name string) (*model.User, error)
 	GetUserWithEmail(ctx context.Context, email string) (*model.User, error)
@@ -23,7 +26,10 @@ type Repository interface {
 	DeleteUserWithEmail(ctx context.Context, email string) (bool, error)
 	DeleteUsersWithAttribute(ctx context.Context, attribute string) (bool, int, error)
 	DeleteAllUsers(ctx context.Context) (bool, int, error)
-	InsertPost(ctx context.Context, userid uuid.UUID, body, hashtag, title string) (bool, error)
+	GetPasswordOfUserWithEmail(ctx context.Context, email string) (string, error)
+
+	// Post specific functions
+	InsertPost(ctx context.Context, userid uuid.UUID, title, body, mediaurl, hashtag string) (bool, error)
 	GetPostWithId(ctx context.Context, postid uuid.UUID) (*model.Post, error)
 	GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*model.Post, error)
 	GetPostsOfHashtag(ctx context.Context, hashtag string) ([]*model.Post, error)
@@ -33,14 +39,17 @@ type Repository interface {
 	DeletePostsOfUser(ctx context.Context, userid uuid.UUID) (bool, int, error)
 	DeletePostsOfHashtag(ctx context.Context, hashtag string) (bool, int, error)
 	DeleteAllPosts(ctx context.Context) (bool, int, error)
+
+	// Comment specific functions
 	GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*model.Comment, error)
 	GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*model.Comment, error)
 	DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error)
 	DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, int, error)
+
+	// Chat / Message specific functions
 	InsertMessageIntoConversation(ctx context.Context, message *model.Message) (bool, error)
 	UpdateMessageOfConversation(ctx context.Context, senderid uuid.UUID, recieverid uuid.UUID, messageid int, newbody string) (bool, error)
 	DeleteMessageOfConversation(ctx context.Context, senderid uuid.UUID, reciverid uuid.UUID, messageid int) (bool, error)
 	GetAllMessagesOfConversation(ctx context.Context, senderid uuid.UUID, reciverid uuid.UUID) ([]*model.Message, error)
 	GetAllMessagesInDB(ctx context.Context) ([]*model.Message, error)
-	GetPasswordOfUserWithEmail(ctx context.Context, email string) (string, error)
 }

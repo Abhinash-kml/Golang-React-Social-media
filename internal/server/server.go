@@ -10,6 +10,7 @@ import (
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/internal/server/api/handler"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
@@ -82,10 +83,6 @@ func (s *Server) ServeAPI() {
 	fmt.Println("Listening on localhost:8000.")
 }
 
-func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	attributeType := queryParams.Get("attribute_type")
@@ -151,6 +148,10 @@ func (s *Server) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -175,6 +176,33 @@ func (s *Server) UpdatePostOfUserWithPostId(w http.ResponseWriter, r *http.Reque
 
 }
 
-func (s *Server) AddPostOfUser(w http.ResponseWriter, r *http.Request) {
+func (s *Server) AddPostOfUserid(w http.ResponseWriter, r *http.Request) {
+	// Extract form values
+	userid := r.FormValue("userid")
+	title := r.FormValue("title")
+	body := r.FormValue("body")
+	mediaUrl := r.FormValue("media_url")
+	hashtag := r.FormValue("hashtag")
 
+	// Parse the UUID from the string
+	uuid, err := uuid.Parse(userid)
+	if err != nil {
+		http.Error(w, "Invalid UUID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Insert post into the repository
+	ok, err := s.repository.InsertPost(context.Background(), uuid, title, body, mediaUrl, hashtag)
+	if err != nil {
+		http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal Query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Success response
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Success"))
 }

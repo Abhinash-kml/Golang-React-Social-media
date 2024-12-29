@@ -30,7 +30,7 @@ func (s *Server) SetupRoutes() {
 	private.HandleFunc("/comment/{postid}/{id}", s.DeleteCommentOfPostWithId).Methods("DELETE")
 	private.HandleFunc("/posts/{userid}/{postid}", s.DeletePostOfUserWithPostId).Methods("DELETE")
 	private.HandleFunc("/posts/{userid}/{postid}", s.UpdatePostOfUserWithPostId).Methods("PUT")
-	private.HandleFunc("/posts/{userid}/", s.AddPostOfUser).Methods("DELETE")
+	private.HandleFunc("/posts", s.AddPostOfUserid).Methods("POST")
 
 	// userRouter := s.router.PathPrefix("/api/user").Subrouter()
 	// userRouter.HandleFunc("", s.HandleGetUser).Methods("GET")

@@ -414,8 +414,9 @@ func (d *Postgres) DeleteMessageOfConversation(ctx context.Context, senderId, re
 	return true, nil
 }
 
-func (d *Postgres) InsertPost(ctx context.Context, userid uuid.UUID, body, hashtag, title string) (bool, error) {
-	result, err := d.primary.ExecContext(ctx, "INSERT INTO posts(userid, title, body, hashtag) VALUES($1, $2, $3, $4);", userid, title, body, hashtag)
+func (d *Postgres) InsertPost(ctx context.Context, userid uuid.UUID, title, body, mediaurl, hashtag string) (bool, error) {
+	randomUuid := uuid.New()
+	result, err := d.primary.ExecContext(ctx, "INSERT INTO posts(id, userid, title, body, media_url, hashtag) VALUES($1, $2, $3, $4, $5, $6);", randomUuid, userid, title, body, mediaurl, hashtag)
 	if err != nil {
 		d.logger.Error("Error inserting new post", zap.Error(err))
 		return false, err
