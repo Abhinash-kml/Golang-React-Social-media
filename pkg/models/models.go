@@ -1,27 +1,26 @@
 package model
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type User struct {
-	Id          uuid.UUID    `json:"uuid,omitempty"`
-	Name        string       `json:"name,omitempty"`
-	Email       string       `json:"email,omitempty"`
-	Password    string       `json:"password,omitempty"`
-	Dob         string       `json:"dob,omitempty"`
-	Created_at  string       `json:"created_at,omitempty"`
-	Modified_at string       `json:"modified_at,omitempty"`
-	Lastlogin   string       `json:"last_login,omitempty"`
-	Country     string       `json:"country,omitempty"`
-	State       string       `json:"state,omitempty"`
-	City        string       `json:"city,omitempty"`
-	AvatarUrl   string       `json:"avatar_url,omitempty"`
-	BanLevel    string       `json:"ban_level,omitempty"` // (0 - no ban, 1 - text chat, 2 - voice chat, 3 - both voice and text, 4 - complete ip ban)
-	BanDuration sql.NullTime `json:"ban_duration,omitempty"`
+	Id          uuid.UUID `json:"uuid,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Email       string    `json:"email,omitempty"`
+	Password    string    `json:"password,omitempty"`
+	Dob         string    `json:"dob,omitempty"`
+	Created_at  time.Time `json:"created_at,omitempty"`
+	Modified_at time.Time `json:"modified_at,omitempty"`
+	Lastlogin   time.Time `json:"last_login,omitempty"`
+	Country     string    `json:"country,omitempty"`
+	State       string    `json:"state,omitempty"`
+	City        string    `json:"city,omitempty"`
+	AvatarUrl   string    `json:"avatar_url,omitempty"`
+	BanLevel    string    `json:"ban_level,omitempty"` // (0 - no ban, 1 - text chat, 2 - voice chat, 3 - both voice and text, 4 - complete ip ban)
+	BanDuration time.Time `json:"ban_duration,omitempty"`
 }
 
 /*func NewUser(name, email, password, dob, ban_level string) *User {

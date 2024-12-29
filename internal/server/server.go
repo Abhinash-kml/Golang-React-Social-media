@@ -9,9 +9,11 @@ import (
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/internal/server/api/handler"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
+	model "github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Server struct {
@@ -82,6 +84,7 @@ func (s *Server) ServeAPI() {
 	fmt.Println("Listening on localhost:8000.")
 }
 
+// Tested - OK
 func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	attributeType := queryParams.Get("attribute_type")
@@ -126,6 +129,7 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Tested - OK
 func (s *Server) GetPostsOfUserid(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	userid := queryParams.Get("userid")
@@ -145,24 +149,81 @@ func (s *Server) GetPostsOfUserid(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Tested - OK
 func (s *Server) AddNewUser(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	dob := r.FormValue("dob")
+	country := r.FormValue("country")
+	state := r.FormValue("state")
+	city := r.FormValue("city")
+	avatarurl := r.FormValue("avatarurl")
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	if err != nil {
+		http.Error(w, "Hashing password failed", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.InsertUser(context.Background(), name, email, string(hashedPassword), dob, country, state, city, avatarurl)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
+// Tested - OK
 func (s *Server) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := s.repository.GetAllUsers(context.Background())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	json.NewEncoder(w).Encode(users)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	postid := queryParams.Get("postid")
 
+	uuid, err := uuid.Parse(postid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	comments, err := s.repository.GetCommentsOfPost(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(comments)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
+	var comment model.Comment
+	json.NewDecoder(r.Body).Decode(&comment)
 
-}
-
-func (s *Server) AddNewCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
-
+	ok, err := s.repository.AddCommentToPostId(comment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) UpdateCommentOfPostWithId(w http.ResponseWriter, r *http.Request) {

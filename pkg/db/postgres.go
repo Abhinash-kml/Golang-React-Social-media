@@ -171,8 +171,7 @@ func (d *Postgres) UpdateUserWithName(ctx context.Context, oldName, newName, ema
 }
 
 func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
-	users := make([]*model.User, 1)
-	var user model.User
+	users := []*model.User{}
 
 	rows, err := d.primary.QueryContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users;")
 	if err != nil {
@@ -186,14 +185,21 @@ func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
+		var banduration sql.NullTime
+		var user model.User
+		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &banduration, &user.AvatarUrl); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
 
+		if banduration.Valid {
+			user.BanDuration = banduration.Time
+		}
+
 		users = append(users, &user)
 	}
+
 	return users, nil
 }
 
