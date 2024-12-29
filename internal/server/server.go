@@ -179,6 +179,59 @@ func (s *Server) AddNewUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Testing Required
+func (s *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	newName := r.FormValue("name")
+	newEmail := r.FormValue("email")
+	newCountry := r.FormValue("country")
+	newState := r.FormValue("state")
+
+	userid, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.UpdateUserWithId(context.Background(), userid, newName, newEmail, newCountry, newState)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// Testing required
+func (s *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	userid, err := uuid.Parse(id)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.DeleteUserWithId(context.Background(), userid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 // Tested - OK
 func (s *Server) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := s.repository.GetAllUsers(context.Background())
@@ -211,38 +264,27 @@ func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
-	var comment model.Comment
-	json.NewDecoder(r.Body).Decode(&comment)
-
-	ok, err := s.repository.AddCommentToPostId(comment)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !ok {
-		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *Server) UpdateCommentOfPostWithId(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) DeleteCommentOfPostWithId(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetPostWithId(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) DeletePostOfUserWithPostId(w http.ResponseWriter, r *http.Request) {
+func (s *Server) UpdatePostWithId(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) UpdatePostOfUserWithPostId(w http.ResponseWriter, r *http.Request) {
+func (s *Server) DeletePostWithId(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *Server) AddPostOfUserid(w http.ResponseWriter, r *http.Request) {
+func (s *Server) GetPostsOfUserId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) AddPostOfUserWithId(w http.ResponseWriter, r *http.Request) {
 	// Extract form values
 	userid := r.FormValue("userid")
 	title := r.FormValue("title")
@@ -271,6 +313,37 @@ func (s *Server) AddPostOfUserid(w http.ResponseWriter, r *http.Request) {
 	// Success response
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
+}
+
+func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
+	var comment model.Comment
+	json.NewDecoder(r.Body).Decode(&comment)
+
+	ok, err := s.repository.AddCommentToPostId(comment)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal query operation failed", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) UpdateCommentWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) DeleteCommentWithId(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) GetAllComments(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *Server) GetCommentWithId(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (s *Server) GetRepo() db.Repository {
