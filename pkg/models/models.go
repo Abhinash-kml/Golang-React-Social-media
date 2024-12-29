@@ -35,28 +35,28 @@ type User struct {
 }*/
 
 type Post struct {
-	Id          int            `json:"id,omitempty"`
-	UserId      uuid.UUID      `json:"userid,omitempty"`
-	Title       string         `json:"title,omitempty"`
-	Created_at  sql.NullTime   `json:"created_at,omitempty"`
-	Modified_at sql.NullTime   `json:"modified_at,omitempty"`
-	Body        string         `json:"body,omitempty"`
-	Likes       int            `json:"likes,omitempty"`
-	Comments    int            `json:"comments,omitempty"`
-	MediaUrl    sql.NullString `json:"media_url,omitempty"`
-	Hashtag     sql.NullString `json:"hashtag,omitempty"`
+	Id          uuid.UUID `json:"id,omitempty"`
+	UserId      uuid.UUID `json:"userid,omitempty"`
+	Title       string    `json:"title,omitempty"`
+	Created_at  time.Time `json:"created_at,omitempty"`
+	Modified_at time.Time `json:"modified_at,omitempty"`
+	Body        string    `json:"body,omitempty"`
+	Likes       int       `json:"likes,omitempty"`
+	Comments    int       `json:"comments,omitempty"`
+	MediaUrl    string    `json:"media_url,omitempty"`
+	Hashtag     string    `json:"hashtag,omitempty"`
 }
 
-func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments int) *Post {
-	return &Post{
-		UserId:   uuid,
-		Body:     content,
-		Hashtag:  sql.NullString{String: hashtag, Valid: true},
-		Likes:    likes,
-		Comments: comments,
-		MediaUrl: sql.NullString{String: media_url, Valid: true},
-	}
-}
+// func NewPost(uuid uuid.UUID, content, hashtag, media_url string, likes, comments int) *Post {
+// 	return &Post{
+// 		UserId:   uuid,
+// 		Body:     content,
+// 		Hashtag:  sql.NullString{String: hashtag, Valid: true},
+// 		Likes:    likes,
+// 		Comments: comments,
+// 		MediaUrl: sql.NullString{String: media_url, Valid: true},
+// 	}
+// }
 
 type Message struct {
 	SenderID   uuid.UUID `json:"senderid,omitempty"`

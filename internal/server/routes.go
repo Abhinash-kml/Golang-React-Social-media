@@ -20,7 +20,7 @@ func (s *Server) SetupRoutes() {
 
 	public.HandleFunc("/user", s.GetUserWithAttribute).Methods("GET")
 	public.HandleFunc("/comments/{postid}", s.GetCommentsOfPostId).Methods("GET")
-	public.HandleFunc("/posts/{userid}", s.GetPostsOfUserid).Methods("GET")
+	public.HandleFunc("/posts", s.GetPostsOfUserid).Methods("GET")
 
 	private.HandleFunc("/user", s.AddNewUser).Methods("POST")
 	private.HandleFunc("/users", s.GetAllUsers).Methods("GET")

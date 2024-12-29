@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -88,56 +87,62 @@ func (s *Server) GetUserWithAttribute(w http.ResponseWriter, r *http.Request) {
 	attributeType := queryParams.Get("attribute_type")
 	attribute := queryParams.Get("attribute")
 
-	switch attributeType {
-	case "userid":
-		{
-			fmt.Println("attribute is userid")
-			user, err := s.repository.GetUserWithId(context.Background(), attribute)
-			if err != nil {
-				s.logger.Error("Error getting user with userid from database",
-					zap.String("Error", err.Error()))
-
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-
-			json.NewEncoder(w).Encode(user)
-			w.WriteHeader(http.StatusOK)
-		}
-	case "name":
-		{
-			fmt.Println("attribute is name")
-			user, err := s.repository.GetUserWithName(context.Background(), attribute)
-			if err != nil {
-				s.logger.Error("Error getting user with name from database",
-					zap.String("Error", err.Error()))
-
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-
-			json.NewEncoder(w).Encode(user)
-			w.WriteHeader(http.StatusOK)
-		}
-	case "email":
-		fmt.Println("attribute is email")
-		user, err := s.repository.GetUserWithEmail(context.Background(), attribute)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("requested record doesn't exit"))
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}
-
-		json.NewEncoder(w).Encode(user)
-		w.WriteHeader(http.StatusOK)
+	validAttributes := []string{
+		"userid",
+		"name",
+		"email",
+		"password",
+		"dob",
+		"created_at",
+		"modified_at",
+		"last_login",
+		"country",
+		"state",
+		"city",
+		"avatar_url",
+		"ban_level",
+		"ban_duration",
 	}
 
-	w.WriteHeader(http.StatusInternalServerError)
+	valid := false
+	for _, val := range validAttributes {
+		if attributeType == val {
+			valid = true
+			break
+		}
+	}
+
+	if !valid {
+		http.Error(w, "invalid attribute", http.StatusInternalServerError)
+		return
+	}
+
+	users, err := s.repository.GetUsersWithAttribute(context.Background(), attributeType, attribute)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	json.NewEncoder(w).Encode(users)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetPostsOfUserid(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userid := queryParams.Get("userid")
+	uuid, err := uuid.Parse(userid)
+	if err != nil {
+		http.Error(w, "Failed to parse provided uuid", http.StatusInternalServerError)
+		return
+	}
 
+	posts, err := s.repository.GetPostsOfUser(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(posts)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) AddNewUser(w http.ResponseWriter, r *http.Request) {
@@ -205,4 +210,8 @@ func (s *Server) AddPostOfUserid(w http.ResponseWriter, r *http.Request) {
 	// Success response
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success"))
+}
+
+func (s *Server) GetRepo() db.Repository {
+	return s.repository
 }

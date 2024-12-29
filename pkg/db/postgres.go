@@ -119,10 +119,10 @@ func (d *Postgres) GetUserWithEmail(ctx context.Context, email string) (*model.U
 }
 
 func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value string) ([]*model.User, error) {
-	users := make([]*model.User, 1)
-	var user model.User
+	users := []*model.User{}
 
-	rows, err := d.primary.QueryContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE $1 = $2;", attribute, value)
+	query := fmt.Sprintf("SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE %s = $1;", attribute)
+	rows, err := d.primary.QueryContext(ctx, query, value)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			d.logger.Error("No rows in table", zap.Error(err))
@@ -134,6 +134,7 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 	defer rows.Close()
 
 	for rows.Next() {
+		user := model.User{}
 		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
@@ -452,17 +453,34 @@ func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*mod
 	}
 	defer rows.Close()
 
-	posts := make([]*model.Post, 1)
-	post := &model.Post{}
+	posts := []*model.Post{}
 
 	for rows.Next() {
-		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
+		var mediaurl sql.NullString
+		var hashtag sql.NullString
+		var createdat sql.NullTime
+		var modifiedat sql.NullTime
+		var post model.Post
+		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &mediaurl, &hashtag, &createdat, &modifiedat); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
 
-		posts = append(posts, post)
+		if mediaurl.Valid {
+			post.MediaUrl = mediaurl.String
+		}
+		if hashtag.Valid {
+			post.Hashtag = hashtag.String
+		}
+		if createdat.Valid {
+			post.Created_at = createdat.Time
+		}
+		if modifiedat.Valid {
+			post.Modified_at = modifiedat.Time
+		}
+
+		posts = append(posts, &post)
 	}
 
 	return posts, nil
