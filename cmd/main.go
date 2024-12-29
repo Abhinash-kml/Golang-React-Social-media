@@ -26,11 +26,6 @@ func main() {
 	server := server.NewServer()
 	server.Start()
 
-	// users, _ := server.GetRepo().GetUsersWithAttribute(context.Background(), "country", "India")
-	// for _, val := range users {
-	// 	fmt.Printf("%+v\n", val)
-	// }
-
 	recievedSignal := <-sigs
 	fmt.Println("Recieved signal:", recievedSignal, "\nShutting down server...")
 	server.Stop()

@@ -532,17 +532,21 @@ func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	}
 	defer rows.Close()
 
-	posts := make([]*model.Post, 1)
-	post := &model.Post{}
+	posts := []*model.Post{}
 
 	for rows.Next() {
-		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
+		var post model.Post
+		var modifiedat sql.NullTime
+		if err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &modifiedat); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
+		if modifiedat.Valid {
+			post.Modified_at = modifiedat.Time
+		}
 
-		posts = append(posts, post)
+		posts = append(posts, &post)
 	}
 
 	return posts, nil
@@ -648,17 +652,22 @@ func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*
 	}
 	defer rows.Close()
 
-	comments := make([]*model.Comment, 1)
-	comment := &model.Comment{}
+	comments := []*model.Comment{}
 
 	for rows.Next() {
-		if err := rows.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
+		var modifiedat sql.NullTime
+		var comment model.Comment
+		if err := rows.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &modifiedat); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
 		}
 
-		comments = append(comments, comment)
+		if modifiedat.Valid {
+			comment.Modified_at = modifiedat.Time
+		}
+
+		comments = append(comments, &comment)
 	}
 
 	return comments, nil
