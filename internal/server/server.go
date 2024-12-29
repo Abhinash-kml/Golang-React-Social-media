@@ -245,8 +245,8 @@ func (s *Server) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
-	queryParams := r.URL.Query()
-	postid := queryParams.Get("postid")
+	vars := mux.Vars(r)
+	postid := vars["id"]
 
 	uuid, err := uuid.Parse(postid)
 	if err != nil {
@@ -265,23 +265,103 @@ func (s *Server) GetCommentsOfPostId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetAllPosts(w http.ResponseWriter, r *http.Request) {
+	comments, err := s.repository.GetAllPosts(context.Background())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	json.NewEncoder(w).Encode(comments)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetPostWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	postid := vars["id"]
 
+	uuid, err := uuid.Parse(postid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	post, err := s.repository.GetPostWithId(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(post)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) UpdatePostWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	postid := vars["id"]
+	newTitle := r.FormValue("title")
+	newBody := r.FormValue("body")
+	newHashtag := r.FormValue("hashtag")
 
+	uuid, err := uuid.Parse(postid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.UpdatePostWithId(context.Background(), uuid, newTitle, newBody, newHashtag)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal Query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) DeletePostWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	postid := vars["id"]
 
+	uuid, err := uuid.Parse(postid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.DeletePostWithId(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal Query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetPostsOfUserId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userid := vars["id"]
 
+	uuid, err := uuid.Parse(userid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	posts, err := s.repository.GetPostsOfUser(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(posts)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) AddPostOfUserWithId(w http.ResponseWriter, r *http.Request) {
@@ -331,19 +411,82 @@ func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) UpdateCommentWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	commentid := vars["id"]
+	newBody := r.FormValue("body")
 
+	uuid, err := uuid.Parse(commentid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.UpdateCommentWithId(context.Background(), uuid, newBody)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal Query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) DeleteCommentWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	commentid := vars["id"]
 
+	uuid, err := uuid.Parse(commentid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.DeleteCommentWithId(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "Internal Query operation failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetAllComments(w http.ResponseWriter, r *http.Request) {
 
+	comments, err := s.repository.GetAllComments(context.Background())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(comments)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetCommentWithId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	commentid := vars["id"]
 
+	uuid, err := uuid.Parse(commentid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	comment, err := s.repository.GetCommentWithId(context.Background(), uuid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(comment)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) GetRepo() db.Repository {
