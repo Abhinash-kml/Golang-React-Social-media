@@ -38,6 +38,6 @@ func (s *Server) SetupRoutes() {
 	public.HandleFunc("/comments/{id}", s.GetCommentWithId).Methods("GET")              // working
 	public.HandleFunc("/comments/{id}", s.UpdateCommentWithId).Methods("PUT")           // working
 	public.HandleFunc("/comments/{id}", s.DeleteCommentWithId).Methods("DELETE")        // working
-	public.HandleFunc("/posts/{id}/comments", s.GetCommentsOfPostId).Methods("GET")     // testing required
-	public.HandleFunc("/posts/{id}/comments", s.AddCommentToPostWithId).Methods("POST") // testing required
+	public.HandleFunc("/posts/{id}/comments", s.GetCommentsOfPostId).Methods("GET")     // working
+	public.HandleFunc("/posts/{id}/comments", s.AddCommentToPostWithId).Methods("POST") // working
 }

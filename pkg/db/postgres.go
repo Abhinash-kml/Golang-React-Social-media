@@ -124,12 +124,10 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 	query := fmt.Sprintf("SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users WHERE %s = $1;", attribute)
 	rows, err := d.primary.QueryContext(ctx, query, value)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in table", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -183,12 +181,10 @@ func (d *Postgres) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 
 	rows, err := d.primary.QueryContext(ctx, "SELECT userid, name, email, created_at, modified_at, last_login, country, state, city, ban_level, ban_duration, avatar_url FROM users;")
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in table", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -350,12 +346,10 @@ func (d *Postgres) InsertMessageIntoConversation(ctx context.Context, message *m
 func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, receiverId uuid.UUID) ([]*model.Message, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT senderid, recieverid, body, status FROM messages WHERE senderid IN($1, $2) AND recieverid IN($1, $2);", senderId, receiverId)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -380,10 +374,10 @@ func (d *Postgres) GetAllMessagesOfConversation(ctx context.Context, senderId, r
 func (d *Postgres) GetAllMessagesInDB(ctx context.Context) ([]*model.Message, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM messages;")
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
-			return nil, err
-		}
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
+
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -462,12 +456,10 @@ func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) (*model.Po
 func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*model.Post, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts WHERE userid = $1;", userid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -507,12 +499,10 @@ func (d *Postgres) GetPostsOfUser(ctx context.Context, userid uuid.UUID) ([]*mod
 func (d *Postgres) GetPostsOfHashtag(ctx context.Context, hashtag string) ([]*model.Post, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts WHERE hashtag = $1;", hashtag)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -535,12 +525,10 @@ func (d *Postgres) GetPostsOfHashtag(ctx context.Context, hashtag string) ([]*mo
 func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM posts ORDER BY title ASC;")
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -660,12 +648,10 @@ func (d *Postgres) GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*
 func (d *Postgres) GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*model.Comment, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM comments WHERE postid = $1;", postid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -723,12 +709,10 @@ func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (
 func (d *Postgres) GetAllComments(ctx context.Context) ([]*model.Comment, error) {
 	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM comments;")
 	if err != nil {
-		if err == sql.ErrNoRows {
-			d.logger.Error("No rows in result set", zap.Error(err))
+		d.logger.Error("Failed to execute sql query", zap.Error(err))
 
-			rows.Close()
-			return nil, err
-		}
+		rows.Close()
+		return nil, err
 	}
 	defer rows.Close()
 	comments := []*model.Comment{}
