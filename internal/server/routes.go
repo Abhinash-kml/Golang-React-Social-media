@@ -19,14 +19,14 @@ func (s *Server) SetupRoutes() {
 	// private.Use(middleware.RateLimit)
 
 	// User Routes
-	public.HandleFunc("/users", s.GetAllUsers).Methods("GET")               // Query params: ?limit=10&offset=0
-	public.HandleFunc("/users/{id}", s.GetUserWithAttribute).Methods("GET") // Path param: {id}
-	public.HandleFunc("/users", s.AddNewUser).Methods("POST")               // Add new user
-	public.HandleFunc("/users/{id}", s.UpdateUser).Methods("PUT")           // Update existing user
-	public.HandleFunc("/users/{id}", s.DeleteUser).Methods("DELETE")        // Delete existing user
+	public.HandleFunc("/users", s.GetAllUsers).Methods("GET")               // working
+	public.HandleFunc("/users", s.AddNewUser).Methods("POST")               // working
+	public.HandleFunc("/users/{id}", s.GetUserWithAttribute).Methods("GET") // works :: refinement and flexible query design required
+	public.HandleFunc("/users/{id}", s.UpdateUser).Methods("PUT")           // working
+	public.HandleFunc("/users/{id}", s.DeleteUser).Methods("DELETE")        // working
 
 	// Post Routes
-	public.HandleFunc("/posts", s.GetAllPosts).Methods("GET")        // Query params: ?user_id=123&hashtag=sports
+	public.HandleFunc("/posts", s.GetAllPosts).Methods("GET")        // working
 	public.HandleFunc("/posts/{id}", s.GetPostWithId).Methods("GET") // Path param: {id}
 	public.HandleFunc("/posts/{id}", s.UpdatePostWithId).Methods("PUT")
 	public.HandleFunc("/posts/{id}", s.DeletePostWithId).Methods("DELETE")
@@ -34,10 +34,10 @@ func (s *Server) SetupRoutes() {
 	public.HandleFunc("/users/{id}/posts", s.AddPostOfUserWithId).Methods("POST") // Query params: ?limit=10&offset=0
 
 	// Comment Routes
-	public.HandleFunc("/comments", s.GetAllComments).Methods("GET")        // Query params: ?post_id=123
-	public.HandleFunc("/comments/{id}", s.GetCommentWithId).Methods("GET") // Path param: {id}
-	public.HandleFunc("/comments/{id}", s.UpdateCommentWithId).Methods("PUT")
-	public.HandleFunc("/comments/{id}", s.DeleteCommentWithId).Methods("DELETE")
-	public.HandleFunc("/posts/{id}/comments", s.GetCommentsOfPostId).Methods("GET")     // Query params: ?limit=10&offset=0
-	public.HandleFunc("/posts/{id}/comments", s.AddCommentToPostWithId).Methods("POST") // Path param: {id}
+	public.HandleFunc("/comments", s.GetAllComments).Methods("GET")                     // working
+	public.HandleFunc("/comments/{id}", s.GetCommentWithId).Methods("GET")              // working
+	public.HandleFunc("/comments/{id}", s.UpdateCommentWithId).Methods("PUT")           // working
+	public.HandleFunc("/comments/{id}", s.DeleteCommentWithId).Methods("DELETE")        // working
+	public.HandleFunc("/posts/{id}/comments", s.GetCommentsOfPostId).Methods("GET")     // testing required
+	public.HandleFunc("/posts/{id}/comments", s.AddCommentToPostWithId).Methods("POST") // testing required
 }

@@ -135,10 +135,18 @@ func (d *Postgres) GetUsersWithAttribute(ctx context.Context, attribute, value s
 
 	for rows.Next() {
 		user := model.User{}
-		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &user.Modified_at, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &user.BanDuration, &user.AvatarUrl); err != nil {
+		var modifiedat, banduration sql.NullTime
+		if err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Created_at, &modifiedat, &user.Lastlogin, &user.Country, &user.State, &user.City, &user.BanLevel, &banduration, &user.AvatarUrl); err != nil {
 			d.logger.Error("Error scanning row", zap.Error(err))
 
 			return nil, err
+		}
+
+		if modifiedat.Valid {
+			user.Modified_at = modifiedat.Time
+		}
+		if banduration.Valid {
+			user.BanDuration = banduration.Time
 		}
 
 		users = append(users, &user)
@@ -631,10 +639,15 @@ func (d *Postgres) DeleteAllPosts(ctx context.Context) (bool, int, error) {
 func (d *Postgres) GetCommentWithId(ctx context.Context, commentid uuid.UUID) (*model.Comment, error) {
 	row := d.primary.QueryRowContext(ctx, "SELECT * FROM comments WHERE id = $1;", commentid)
 	comment := &model.Comment{}
-	if err := row.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &comment.Modified_at); err != nil {
+	var modifiedat sql.NullTime
+	if err := row.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &modifiedat); err != nil {
 		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
+	}
+
+	if modifiedat.Valid {
+		comment.Modified_at = modifiedat.Time
 	}
 
 	return comment, nil
