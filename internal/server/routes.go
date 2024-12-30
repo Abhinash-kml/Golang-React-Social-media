@@ -26,12 +26,12 @@ func (s *Server) SetupRoutes() {
 	public.HandleFunc("/users/{id}", s.DeleteUser).Methods("DELETE")        // working
 
 	// Post Routes
-	public.HandleFunc("/posts", s.GetAllPosts).Methods("GET")        // working
-	public.HandleFunc("/posts/{id}", s.GetPostWithId).Methods("GET") // Path param: {id}
-	public.HandleFunc("/posts/{id}", s.UpdatePostWithId).Methods("PUT")
-	public.HandleFunc("/posts/{id}", s.DeletePostWithId).Methods("DELETE")
-	public.HandleFunc("/users/{id}/posts", s.GetPostsOfUserId).Methods("GET")     // Query params: ?limit=10&offset=0
-	public.HandleFunc("/users/{id}/posts", s.AddPostOfUserWithId).Methods("POST") // Query params: ?limit=10&offset=0
+	public.HandleFunc("/posts", s.GetAllPosts).Methods("GET")                     // working
+	public.HandleFunc("/posts/{id}", s.GetPostWithId).Methods("GET")              // working
+	public.HandleFunc("/posts/{id}", s.UpdatePostWithId).Methods("PUT")           // working
+	public.HandleFunc("/posts/{id}", s.DeletePostWithId).Methods("DELETE")        // working
+	public.HandleFunc("/users/{id}/posts", s.GetPostsOfUserId).Methods("GET")     // working
+	public.HandleFunc("/users/{id}/posts", s.AddPostOfUserWithId).Methods("POST") // working
 
 	// Comment Routes
 	public.HandleFunc("/comments", s.GetAllComments).Methods("GET")                     // working

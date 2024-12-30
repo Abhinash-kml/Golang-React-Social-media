@@ -445,11 +445,15 @@ func (d *Postgres) InsertPost(ctx context.Context, userid uuid.UUID, title, body
 func (d *Postgres) GetPostWithId(ctx context.Context, uuId uuid.UUID) (*model.Post, error) {
 	row := d.primary.QueryRowContext(ctx, "SELECT * FROM posts WHERE id = $1;", uuId)
 	post := &model.Post{}
-
-	if err := row.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &post.Modified_at); err != nil {
+	var modifiedat sql.NullTime
+	if err := row.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Likes, &post.Comments, &post.MediaUrl, &post.Hashtag, &post.Created_at, &modifiedat); err != nil {
 		d.logger.Error("Error scanning row", zap.Error(err))
 
 		return nil, err
+	}
+
+	if modifiedat.Valid {
+		post.Modified_at = modifiedat.Time
 	}
 
 	return post, nil
@@ -561,7 +565,7 @@ func (d *Postgres) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 }
 
 func (d *Postgres) UpdatePostWithId(ctx context.Context, postId uuid.UUID, newTitle, newContent, hashtag string) (bool, error) {
-	result, err := d.primary.ExecContext(ctx, "UPDATE posts SET title = $1, body = $2, hastag = $3, modified_at = $4 WHERE id = $5;", newTitle, newContent, hashtag, time.Now(), postId)
+	result, err := d.primary.ExecContext(ctx, "UPDATE posts SET title = $1, body = $2, hashtag = $3, modified_at = $4 WHERE id = $5;", newTitle, newContent, hashtag, time.Now(), postId)
 	if err != nil {
 		d.logger.Error("Error updating post", zap.Any("postid", postId), zap.Error(err))
 		return false, err
