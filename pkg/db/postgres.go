@@ -702,3 +702,61 @@ func (d *Postgres) DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (
 
 	return true, int(deletedRows), nil
 }
+
+func (d *Postgres) GetAllComments(ctx context.Context) ([]*model.Comment, error) {
+	rows, err := d.primary.QueryContext(ctx, "SELECT * FROM comments;")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			d.logger.Error("No rows in result set", zap.Error(err))
+
+			rows.Close()
+			return nil, err
+		}
+	}
+	defer rows.Close()
+	comments := []*model.Comment{}
+
+	for rows.Next() {
+		var comment model.Comment
+		var modifiedat sql.NullTime
+		if err := rows.Scan(&comment.Id, &comment.PostId, &comment.Body, &comment.Created_at, &modifiedat); err != nil {
+			d.logger.Error("Error scanning row", zap.Error(err))
+
+			return nil, err
+		}
+
+		if modifiedat.Valid {
+			comment.Modified_at = modifiedat.Time
+		}
+
+		comments = append(comments, &comment)
+	}
+
+	return comments, nil
+}
+
+func (d *Postgres) AddCommentToPostId(ctx context.Context, postid uuid.UUID, body string) (bool, error) {
+	result, err := d.primary.ExecContext(ctx, "INSERT INTO comments(id, postid, body) VALUES($1, $2, $3);", uuid.New(), postid, body)
+	if err != nil {
+		d.logger.Error("Error inserting new comment", zap.Error(err))
+
+		return false, err
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (d *Postgres) UpdateCommentWithId(ctx context.Context, commentid uuid.UUID, newBody string) (bool, error) {
+	result, err := d.primary.ExecContext(ctx, "UPDATE comments SET body = $1, modified_at = $2 WHERE id = $3;", newBody, time.Now(), commentid)
+	if err != nil {
+		d.logger.Error("Error updating comment with id", zap.Error(err))
+
+		return false, err
+	} else if count, _ := result.RowsAffected(); count == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}

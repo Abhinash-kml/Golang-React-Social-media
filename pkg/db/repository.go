@@ -45,6 +45,9 @@ type Repository interface {
 	GetCommentsOfPost(ctx context.Context, postid uuid.UUID) ([]*model.Comment, error)
 	DeleteCommentWithId(ctx context.Context, commentid uuid.UUID) (bool, error)
 	DeleteCommentsOfPost(ctx context.Context, postid uuid.UUID) (bool, int, error)
+	GetAllComments(ctx context.Context) ([]*model.Comment, error)
+	AddCommentToPostId(ctx context.Context, postid uuid.UUID, body string) (bool, error)
+	UpdateCommentWithId(ctx context.Context, commentid uuid.UUID, newBody string) (bool, error)
 
 	// Chat / Message specific functions
 	InsertMessageIntoConversation(ctx context.Context, message *model.Message) (bool, error)

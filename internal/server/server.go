@@ -9,7 +9,6 @@ import (
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/internal/server/api/handler"
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/db"
-	model "github.com/Abhinash-kml/Golang-React-Social-media/pkg/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -396,10 +395,16 @@ func (s *Server) AddPostOfUserWithId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) AddCommentToPostWithId(w http.ResponseWriter, r *http.Request) {
-	var comment model.Comment
-	json.NewDecoder(r.Body).Decode(&comment)
+	postid := r.FormValue("postid")
+	body := r.FormValue("body")
 
-	ok, err := s.repository.AddCommentToPostId(comment)
+	uuid, err := uuid.Parse(postid)
+	if err != nil {
+		http.Error(w, "Error parsing uuid", http.StatusInternalServerError)
+		return
+	}
+
+	ok, err := s.repository.AddCommentToPostId(context.Background(), uuid, body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS comments(
     postid UUID NOT NULL,
     body VARCHAR(64) NOT NULL,
     created_at TIMESTAMP DEFAULT(now()::TIMESTAMP),
-    modified_at TIMESTAMP DEFAULT(NULL),
+    modified_at TIMESTAMP,
 
     CONSTRAINT comments_id_pkey
     PRIMARY KEY(id),
