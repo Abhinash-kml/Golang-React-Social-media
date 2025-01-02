@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Abhinash-kml/Golang-React-Social-media/pkg/utils"
 )
@@ -35,6 +36,15 @@ func CookieBasedJWTAuth(next http.Handler) http.Handler {
 
 func HeaderBasedJWTAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		bearerToken := r.Header.Get("Authorization")
+		token := strings.Split(bearerToken, " ")[1]
+		_, err := utils.VerifyJWT(token)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		jwt.
+			w.WriteHeader(http.StatusOK)
+		next.ServeHTTP(w, r)
 	})
 }
