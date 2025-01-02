@@ -43,8 +43,8 @@ func HeaderBasedJWTAuth(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		jwt.
-			w.WriteHeader(http.StatusOK)
+
+		w.WriteHeader(http.StatusOK)
 		next.ServeHTTP(w, r)
 	})
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -42,6 +43,19 @@ func VerifyJWT(tokenString string) (*jwt.Token, error) {
 	// Check if the token is valid
 	if !token.Valid {
 		return nil, fmt.Errorf("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("no claims")
+	}
+
+	if iss := claims["iss"]; iss != "social-media" {
+		return nil, errors.New("invalid issuer")
+	}
+
+	if float64(time.Now().Unix()) > claims["exp"].(float64) {
+		return nil, errors.New("token expired")
 	}
 
 	// Return the verified token
