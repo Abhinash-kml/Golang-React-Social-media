@@ -1,9 +1,7 @@
-FROM golang:1.23.1
+FROM golang:latest
 WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
+RUN go mod download
 WORKDIR /app/cmd
-RUN go build -o /app/my-app
-EXPOSE 8080
-CMD ["/app/my-app"]
+EXPOSE 8000/tcp
+CMD ["go", "run", "main.go"]
