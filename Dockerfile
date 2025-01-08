@@ -1,4 +1,6 @@
-FROM golang:latest
+
+ARG VERSION=1.23.1
+FROM golang:${VERSION}
 WORKDIR /app
 COPY . .
 RUN go mod download
