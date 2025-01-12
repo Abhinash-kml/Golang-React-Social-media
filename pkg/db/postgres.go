@@ -17,6 +17,7 @@ import (
 
 	/*"github.com/golang-migrate/migrate/v4"*/
 
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
@@ -40,6 +41,11 @@ func (d *Postgres) Connect() {
 	if conn == nil {
 		log.Fatal("Database connection failed.")
 		return
+	}
+
+	err = conn.Ping()
+	if err != nil {
+		log.Fatal("Could not connect to postgres db.", err)
 	}
 
 	d.primary = conn
@@ -68,15 +74,15 @@ func (d *Postgres) Disconnect() {
 }
 
 func (d *Postgres) CreateTables() {
-	// m, err := migrate.New(
-	// 	"file://pkg/db/migrations",
-	// 	"postgresql://postgres:Abx305@localhost:5432/SocialMedia?sslmode=disable")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := m.Up(); err != nil {
-	// 	log.Fatal(err)
-	// }
+	m, err := migrate.New(
+		"file://pkg/db/migrations",
+		"postgresql://postgres:Abx305@postgres:5432/SocialMedia?sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := m.Up(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (d *Postgres) GetUserWithId(ctx context.Context, id string) (*model.User, error) {

@@ -1,0 +1,30 @@
+services:
+  golang-api-server:
+    build: .
+    container_name: golang-api-server
+    command:
+    ports:
+      - target: 8000
+        published: 8000
+    volumes:
+      - type: volume
+        source: service-volume
+        target: /appdata
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Abx305
+      POSTGRES_DB: SocialMedia
+    ports:
+      - target: 5432
+        published: 5432
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /db_records
+
+volumes:
+  service-volume:
+  postgres_data:
